@@ -1,0 +1,41 @@
+# Reference docs generated from upstream projects.
+ref/*
+
+# R session and workspace state.
+.RData
+.Rhistory
+.Rproj.user/
+.Ruserdata
+
+# R package build/check outputs.
+*.tar.gz
+*.Rcheck/
+Meta/
+doc/
+man/
+src/*.o
+src/*.so
+src/*.dll
+src/*.dylib
+src/*.rds
+
+# Rust build outputs.
+target/
+**/*.rs.bk
+
+# Test and coverage artifacts.
+.covr
+coverage/
+
+# Editor and OS files.
+.vscode/
+.idea/
+.DS_Store
+*~
+
+# Agents
+.codex/
+Agent.md
+src/rust/vendor
+src/Makevars
+src/Makevars.win
