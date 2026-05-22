@@ -12,7 +12,7 @@
 #'     ties by longest match.
 #' @param implementation Rust automaton implementation. `"auto"` lets the
 #'   crate choose.
-#' @param ascii_case_insensitive Use ASCII-only case-insensitive matching.
+#' @param ascii_case_insensitive Use ASCII-only case-insensitive matching. Default is `FALSE`.
 #' @param duplicate How duplicate patterns are handled.
 #'
 #' @return An immutable `<ac_automaton>` object.
@@ -38,7 +38,10 @@ ac_build <- function(
   }
 
   if (duplicate == "error" && anyDuplicated(patterns) > 0L) {
-    cli::cli_abort("{.arg patterns} must not contain duplicates.")
+    cli::cli_abort(c(
+      "x" = "{.arg patterns} must not contain duplicates because {.arg duplicate = \"error\"}.",
+      "i" = "Use {.code duplicate = \"keep\"} or {.code duplicate = \"deduplicate\"}."
+    ))
   }
   if (duplicate == "deduplicate") {
     keep <- !duplicated(patterns)
@@ -105,12 +108,17 @@ ac_locate <- function(
   na <- rlang::arg_match(na)
 
   if (overlapping && ac$info$match_kind != "standard") {
-    cli::cli_abort(
-      "{.code overlapping = TRUE} requires {.code match_kind = \"standard\"}."
-    )
+    cli::cli_abort(c(
+      "{.code overlapping = TRUE} requires {.code match_kind = \"standard\"}.",
+      "i" = "Rebuild the automaton with {.code match_kind = \"standard\"} to enable overlapping search."
+    ))
   }
+
   if (na == "error" && anyNA(doc)) {
-    cli::cli_abort("{.arg doc} must not contain missing values because {.arg na = \"error\"}.")
+    cli::cli_abort(c(
+      "x" = "{.arg doc} must not contain missing values because {.arg na = \"error\"}.",
+      "i" = "Use {.code na = \"omit\"} to skip missing values."
+    ))
   }
 
   doc <- enc2utf8(doc)

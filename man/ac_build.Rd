@@ -27,7 +27,7 @@ ties by longest match.
 \item{implementation}{Rust automaton implementation. \code{"auto"} lets the
 crate choose.}
 
-\item{ascii_case_insensitive}{Use ASCII-only case-insensitive matching.}
+\item{ascii_case_insensitive}{Use ASCII-only case-insensitive matching. Default is \code{FALSE}.}
 
 \item{duplicate}{How duplicate patterns are handled.}
 }
