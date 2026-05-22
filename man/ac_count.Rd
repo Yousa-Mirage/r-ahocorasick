@@ -25,3 +25,13 @@ An integer vector with the same length as \code{doc}.
 \description{
 \code{ac_count()} returns the number of pattern matches in each document.
 }
+\examples{
+if (requireNamespace("dplyr", quietly = TRUE)) {
+  ac <- ac_build(c("hello", "world"))
+  docs <- data.frame(doc = c("hello world", "nothing", "world"))
+  dplyr::mutate(docs, n_matches = ac_count(ac, doc))
+}
+}
+\seealso{
+\code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_extract]{ac_extract()}}.
+}

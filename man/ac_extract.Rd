@@ -31,3 +31,13 @@ two character vectors:
 \code{ac_extract()} returns one list element per document. Each element contains
 the matched text and the corresponding pattern values.
 }
+\examples{
+if (requireNamespace("dplyr", quietly = TRUE)) {
+  ac <- ac_build(c("hello", "world"))
+  docs <- data.frame(doc = c("hello world", "nothing", "world"))
+  dplyr::mutate(docs, matches = ac_extract(ac, doc))
+}
+}
+\seealso{
+\code{\link[=ac_extract_df]{ac_extract_df()}}, \code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_count]{ac_count()}}.
+}

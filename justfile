@@ -11,7 +11,7 @@ format:
 check:
     jarl check .
     Rscript -e "devtools::spell_check()"
-    cargo clippy --manifest-path src/rust/Cargo.toml
+    cargo clippy --manifest-path src/rust/Cargo.toml -- -D warnings
 clean:
     cargo clean --manifest-path src/rust/Cargo.toml
 

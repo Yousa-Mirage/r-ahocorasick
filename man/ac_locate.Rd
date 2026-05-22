@@ -32,3 +32,13 @@ three integer vectors:
 returns one list element per document. Character offsets are 1-based and
 inclusive, so they can be used directly with \code{substr()}.
 }
+\examples{
+if (requireNamespace("dplyr", quietly = TRUE)) {
+  ac <- ac_build(c("hello", "world"))
+  docs <- data.frame(doc = c("hello world", "nothing", "world"))
+  dplyr::mutate(docs, hits = ac_locate(ac, doc))
+}
+}
+\seealso{
+\code{\link[=ac_locate_df]{ac_locate_df()}}, \code{\link[=ac_extract]{ac_extract()}}, \code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_count]{ac_count()}}.
+}

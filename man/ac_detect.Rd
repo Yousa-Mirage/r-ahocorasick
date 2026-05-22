@@ -21,3 +21,13 @@ A logical vector with the same length as \code{doc}.
 \description{
 \code{ac_detect()} returns whether each document has at least one pattern match.
 }
+\examples{
+if (requireNamespace("dplyr", quietly = TRUE)) {
+  ac <- ac_build(c("hello", "world"))
+  docs <- data.frame(doc = c("hello world", "nothing", "world"))
+  dplyr::mutate(docs, matched = ac_detect(ac, doc))
+}
+}
+\seealso{
+\code{\link[=ac_count]{ac_count()}}, \code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_extract]{ac_extract()}}.
+}

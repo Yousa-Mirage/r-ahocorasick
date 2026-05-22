@@ -27,3 +27,11 @@ A data frame with one row per match and four columns:
 \code{ac_locate_df()} is the data-frame form of \code{\link[=ac_locate]{ac_locate()}}. It is useful when
 you want one row per match instead of one list element per document.
 }
+\examples{
+ac <- ac_build(c("hello", "world"))
+doc <- c("hello world", "nothing", "world hello")
+ac_locate_df(ac, doc)
+}
+\seealso{
+\code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_extract_df]{ac_extract_df()}}.
+}

@@ -15,3 +15,10 @@ A list of automaton metadata.
 \description{
 Return automaton metadata
 }
+\examples{
+ac <- ac_build(c("hello", "world"))
+ac_info(ac)
+}
+\seealso{
+\code{\link[=ac_build]{ac_build()}}, \code{\link[=ac_patterns]{ac_patterns()}}.
+}

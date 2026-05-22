@@ -38,3 +38,12 @@ An immutable \verb{<ac_automaton>} object.
 \code{ac_build()} compiles a character vector of patterns into a reusable
 automaton backed by the Rust \code{aho-corasick} crate.
 }
+\examples{
+ac <- ac_build(c("hello", "world"))
+length(ac)
+ac_info(ac)
+}
+\seealso{
+\code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_count]{ac_count()}}, \code{\link[=ac_extract]{ac_extract()}},
+\code{\link[=ac_patterns]{ac_patterns()}}, \code{\link[=ac_info]{ac_info()}}.
+}

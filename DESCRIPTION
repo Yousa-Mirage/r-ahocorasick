@@ -2,11 +2,10 @@ Package: ahocorasick
 Title: Fast Multi-Pattern String Matching with Aho-Corasick
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "Hao",
-           family = "Cheng",
-           role = c("aut", "cre", "cph"),
-           email = "Yousa-Mirage@foxmail.com")
-Author: Hao Cheng [aut, cre, cph]
+    c(person(given = "Hao",
+             family = "Cheng",
+             role = c("aut", "cre", "cph"),
+             email = "Yousa-Mirage@foxmail.com"))
 Maintainer: Hao Cheng <Yousa-Mirage@foxmail.com>
 Description: Provides fast multi-pattern string matching for R via the
     Aho-Corasick algorithm, powered by the Rust 'aho-corasick' crate.
@@ -25,5 +24,6 @@ Imports:
     cli,
     rlang
 Suggests: 
+    dplyr,
     testthat (>= 3.0.0)
 Language: en-US

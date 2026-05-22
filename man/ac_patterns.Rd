@@ -15,3 +15,10 @@ A character vector of stored patterns.
 \description{
 Return patterns stored in an automaton
 }
+\examples{
+ac <- ac_build(c("hello", "world"))
+ac_patterns(ac)
+}
+\seealso{
+\code{\link[=ac_build]{ac_build()}}, \code{\link[=ac_info]{ac_info()}}.
+}

@@ -16,6 +16,13 @@
 #' @param duplicate How duplicate patterns are handled.
 #'
 #' @return An immutable `<ac_automaton>` object.
+#' @seealso [ac_locate()], [ac_detect()], [ac_count()], [ac_extract()],
+#'   [ac_patterns()], [ac_info()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' length(ac)
+#' ac_info(ac)
 #' @export
 ac_build <- function(
   patterns,
@@ -92,6 +99,14 @@ ac_build <- function(
 #'  * `pattern_id`: Index of the matched pattern in `ac_patterns(ac)`.
 #'  * `start`: 1-based index of the first character in each match.
 #'  * `end`: 1-based index of the last character in each match.
+#' @seealso [ac_locate_df()], [ac_extract()], [ac_detect()], [ac_count()].
+#'
+#' @examples
+#' if (requireNamespace("dplyr", quietly = TRUE)) {
+#'   ac <- ac_build(c("hello", "world"))
+#'   docs <- data.frame(doc = c("hello world", "nothing", "world"))
+#'   dplyr::mutate(docs, hits = ac_locate(ac, doc))
+#' }
 #' @export
 ac_locate <- function(
   ac,
@@ -187,6 +202,12 @@ ac_locate <- function(
 #'
 #' @return A data frame with one row per match and four columns:
 #'   `doc_id`, `pattern_id`, `start`, and `end`.
+#' @seealso [ac_locate()], [ac_extract_df()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' doc <- c("hello world", "nothing", "world hello")
+#' ac_locate_df(ac, doc)
 #' @export
 ac_locate_df <- function(
   ac,
@@ -225,6 +246,14 @@ ac_locate_df <- function(
 #'   fails.
 #'
 #' @return A logical vector with the same length as `doc`.
+#' @seealso [ac_count()], [ac_locate()], [ac_extract()].
+#'
+#' @examples
+#' if (requireNamespace("dplyr", quietly = TRUE)) {
+#'   ac <- ac_build(c("hello", "world"))
+#'   docs <- data.frame(doc = c("hello world", "nothing", "world"))
+#'   dplyr::mutate(docs, matched = ac_detect(ac, doc))
+#' }
 #' @export
 ac_detect <- function(
   ac,
@@ -271,6 +300,14 @@ ac_detect <- function(
 #'   fails.
 #'
 #' @return An integer vector with the same length as `doc`.
+#' @seealso [ac_detect()], [ac_locate()], [ac_extract()].
+#'
+#' @examples
+#' if (requireNamespace("dplyr", quietly = TRUE)) {
+#'   ac <- ac_build(c("hello", "world"))
+#'   docs <- data.frame(doc = c("hello world", "nothing", "world"))
+#'   dplyr::mutate(docs, n_matches = ac_count(ac, doc))
+#' }
 #' @export
 ac_count <- function(
   ac,
@@ -332,6 +369,14 @@ ac_count <- function(
 #'   two character vectors:
 #'  * `matches`: Text matched in the document.
 #'  * `patterns`: Pattern values corresponding to each match.
+#' @seealso [ac_extract_df()], [ac_locate()], [ac_detect()], [ac_count()].
+#'
+#' @examples
+#' if (requireNamespace("dplyr", quietly = TRUE)) {
+#'   ac <- ac_build(c("hello", "world"))
+#'   docs <- data.frame(doc = c("hello world", "nothing", "world"))
+#'   dplyr::mutate(docs, matches = ac_extract(ac, doc))
+#' }
 #' @export
 ac_extract <- function(
   ac,
@@ -419,6 +464,12 @@ ac_extract <- function(
 #'
 #' @return A data frame with one row per match and three columns:
 #'   `doc_id`, `matches`, and `patterns`.
+#' @seealso [ac_extract()], [ac_locate_df()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' doc <- c("hello world", "nothing", "world hello")
+#' ac_extract_df(ac, doc)
 #' @export
 ac_extract_df <- function(
   ac,
@@ -452,6 +503,11 @@ ac_extract_df <- function(
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #'
 #' @return A character vector of stored patterns.
+#' @seealso [ac_build()], [ac_info()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' ac_patterns(ac)
 #' @export
 ac_patterns <- function(ac) {
   ac <- validate_ac_automaton(ac)
@@ -463,6 +519,11 @@ ac_patterns <- function(ac) {
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #'
 #' @return A list of automaton metadata.
+#' @seealso [ac_build()], [ac_patterns()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' ac_info(ac)
 #' @export
 ac_info <- function(ac) {
   ac <- validate_ac_automaton(ac)

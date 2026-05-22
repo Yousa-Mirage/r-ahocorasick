@@ -27,3 +27,11 @@ A data frame with one row per match and three columns:
 \code{ac_extract_df()} is the data-frame form of \code{\link[=ac_extract]{ac_extract()}}. It is useful when
 you want one row per match instead of one list element per document.
 }
+\examples{
+ac <- ac_build(c("hello", "world"))
+doc <- c("hello world", "nothing", "world hello")
+ac_extract_df(ac, doc)
+}
+\seealso{
+\code{\link[=ac_extract]{ac_extract()}}, \code{\link[=ac_locate_df]{ac_locate_df()}}.
+}

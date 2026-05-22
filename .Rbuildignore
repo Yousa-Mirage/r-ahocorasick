@@ -1,5 +1,7 @@
 ^LICENSE\.md$
 ^[.]?air[.]toml$
+^\.agents$
+^\.codex$
 ^\.vscode$
 ^\.github$
 ^\.gitignore$
