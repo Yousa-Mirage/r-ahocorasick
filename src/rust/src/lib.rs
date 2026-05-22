@@ -18,6 +18,13 @@ struct AcAutomaton {
     memory_usage: usize,
 }
 
+// Keep raw byte offsets so locate can convert only the offsets it needs.
+struct RawMatch {
+    pattern_id: i32,
+    start_byte: usize,
+    end_byte: usize,
+}
+
 // Parse the R-facing match kind string into the Rust enum used by the builder.
 fn parse_match_kind(match_kind: &str) -> MatchKind {
     match match_kind {
@@ -106,10 +113,9 @@ fn rust_ac_locate(
     let mut out_start = Vec::new();
     let mut out_end = Vec::new();
 
-    // Search each haystack independently
+    // Search each haystack independently.
     for (haystack, text_id) in x.iter().zip(text_ids.iter()) {
-        // Build a lookup table to convert byte offsets into UTF-8 character offsets.
-        let offset_map = Utf8OffsetMap::new(haystack);
+        let mut raw_matches = Vec::new();
 
         if overlapping {
             let matches = automaton
@@ -118,14 +124,12 @@ fn rust_ac_locate(
                 .map_err(|err| Error::Other(err.to_string()))?;
 
             for mat in matches {
-                // Convert byte offsets into the 1-based inclusive character range expected by R.
-                let range = offset_map
-                    .r_char_range(mat.start(), mat.end())
-                    .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
-                out_text_id.push(*text_id);
-                out_pattern_id.push((mat.pattern().as_usize() + 1) as i32);
-                out_start.push(range.start);
-                out_end.push(range.end);
+                // Store byte offsets first so conversion can be batched for this haystack.
+                raw_matches.push(RawMatch {
+                    pattern_id: (mat.pattern().as_usize() + 1) as i32,
+                    start_byte: mat.start(),
+                    end_byte: mat.end(),
+                });
             }
         } else {
             let matches = automaton
@@ -134,15 +138,32 @@ fn rust_ac_locate(
                 .map_err(|err| Error::Other(err.to_string()))?;
 
             for mat in matches {
-                // Convert byte offsets into the 1-based inclusive character range expected by R.
-                let range = offset_map
-                    .r_char_range(mat.start(), mat.end())
-                    .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
-                out_text_id.push(*text_id);
-                out_pattern_id.push((mat.pattern().as_usize() + 1) as i32);
-                out_start.push(range.start);
-                out_end.push(range.end);
+                // Store byte offsets first so conversion can be batched for this haystack.
+                raw_matches.push(RawMatch {
+                    pattern_id: (mat.pattern().as_usize() + 1) as i32,
+                    start_byte: mat.start(),
+                    end_byte: mat.end(),
+                });
             }
+        }
+
+        // Build a compact lookup table for only the offsets returned by this search.
+        let offset_map = Utf8OffsetMap::for_offsets(
+            haystack,
+            raw_matches
+                .iter()
+                .flat_map(|raw_match| [raw_match.start_byte, raw_match.end_byte]),
+        );
+
+        for raw_match in raw_matches {
+            // Convert byte offsets into the 1-based inclusive character range expected by R.
+            let range = offset_map
+                .r_char_range(raw_match.start_byte, raw_match.end_byte)
+                .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
+            out_text_id.push(*text_id);
+            out_pattern_id.push(raw_match.pattern_id);
+            out_start.push(range.start);
+            out_end.push(range.end);
         }
     }
 
