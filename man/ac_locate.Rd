@@ -4,7 +4,7 @@
 \alias{ac_locate}
 \title{Locate pattern matches in strings}
 \usage{
-ac_locate(ac, doc, overlapping = FALSE, na = c("omit", "error"))
+ac_locate(ac, doc, overlapping = FALSE, na = c("keep", "empty", "error"))
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
@@ -14,19 +14,21 @@ ac_locate(ac, doc, overlapping = FALSE, na = c("omit", "error"))
 \item{overlapping}{Default is \code{FALSE}. If \code{TRUE}, report overlapping
 matches. This is only supported when \code{ac} was built with \code{match_kind = "standard"}.}
 
-\item{na}{How to handle \code{NA} strings. \code{"omit"} skips them (default); \code{"error"} fails.}
+\item{na}{How to handle \code{NA} documents. \code{"keep"} returns \code{NA_integer_}
+in \code{pattern_id}, \code{start}, and \code{end} (default); \code{"empty"} treats missing
+documents as no matches; \code{"error"} fails.}
 }
 \value{
-A data frame with match metadata and character offsets. The columns are:
+A list with the same length as \code{doc}. Each element is a list with
+three integer vectors:
 \itemize{
-\item \code{doc_id}: Index of the input document in \code{doc}.
 \item \code{pattern_id}: Index of the matched pattern in \code{ac_patterns(ac)}.
-\item \code{start}: 1-based index of the first character in the match.
-\item \code{end}: 1-based index of the last character in the match.
+\item \code{start}: 1-based index of the first character in each match.
+\item \code{end}: 1-based index of the last character in each match.
 }
 }
 \description{
 \code{ac_locate()} searches a character vector with a compiled automaton and
-returns one row per match. Character offsets are 1-based and inclusive, so
-they can be used directly with \code{substr()}.
+returns one list element per document. Character offsets are 1-based and
+inclusive, so they can be used directly with \code{substr()}.
 }

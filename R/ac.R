@@ -76,31 +76,33 @@ ac_build <- function(
 #' Locate pattern matches in strings
 #'
 #' `ac_locate()` searches a character vector with a compiled automaton and
-#' returns one row per match. Character offsets are 1-based and inclusive, so
-#' they can be used directly with `substr()`.
+#' returns one list element per document. Character offsets are 1-based and
+#' inclusive, so they can be used directly with `substr()`.
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param doc A character vector of documents to search.
 #' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
 #'   matches. This is only supported when `ac` was built with `match_kind = "standard"`.
-#' @param na How to handle `NA` strings. `"omit"` skips them (default); `"error"` fails.
+#' @param na How to handle `NA` documents. `"keep"` returns `NA_integer_`
+#'   in `pattern_id`, `start`, and `end` (default); `"empty"` treats missing
+#'   documents as no matches; `"error"` fails.
 #'
-#' @return A data frame with match metadata and character offsets. The columns are:
-#'  * `doc_id`: Index of the input document in `doc`.
+#' @return A list with the same length as `doc`. Each element is a list with
+#'   three integer vectors:
 #'  * `pattern_id`: Index of the matched pattern in `ac_patterns(ac)`.
-#'  * `start`: 1-based index of the first character in the match.
-#'  * `end`: 1-based index of the last character in the match.
+#'  * `start`: 1-based index of the first character in each match.
+#'  * `end`: 1-based index of the last character in each match.
 #' @export
 ac_locate <- function(
   ac,
   doc,
   overlapping = FALSE,
-  na = c("omit", "error")
+  na = c("keep", "empty", "error")
 ) {
   ac <- validate_ac_automaton(ac)
 
-  if (!checkmate::test_character(doc, min.len = 1L, all.missing = FALSE)) {
-    cli::cli_abort("{.arg doc} must be a non-empty character vector.")
+  if (!checkmate::test_character(doc)) {
+    cli::cli_abort("{.arg doc} must be a character vector.")
   }
   if (!checkmate::test_flag(overlapping)) {
     cli::cli_abort("{.arg overlapping} must be a logical value.")
@@ -117,29 +119,99 @@ ac_locate <- function(
   if (na == "error" && anyNA(doc)) {
     cli::cli_abort(c(
       "x" = "{.arg doc} must not contain missing values because {.arg na = \"error\"}.",
-      "i" = "Use {.code na = \"omit\"} to skip missing values."
+      "i" = "Use {.code na = \"keep\"} to keep missing values as {.code NA}."
     ))
   }
 
   doc <- enc2utf8(doc)
+  out <- lapply(doc, \(...) {
+    list(
+      pattern_id = integer(),
+      start = integer(),
+      end = integer()
+    )
+  })
 
-  keep <- !is.na(doc)
-  doc <- doc[keep]
-  doc_ids <- as.integer(which(keep))
-
-  if (length(doc) == 0L) {
-    cli::cli_warn("No non-missing documents to search.")
-    return(empty_locate_df())
+  missing <- is.na(doc)
+  if (na == "keep" && any(missing)) {
+    out[missing] <- lapply(
+      out[missing],
+      \(...) {
+        list(
+          pattern_id = NA_integer_,
+          start = NA_integer_,
+          end = NA_integer_
+        )
+      }
+    )
   }
 
-  raw <- rust_ac_locate(ac$ptr, doc, doc_ids, overlapping)
+  keep <- !missing
+  if (!any(keep)) {
+    return(out)
+  }
+
+  doc_ids <- as.integer(which(keep))
+  raw <- rust_ac_locate(ac$ptr, doc[keep], doc_ids, overlapping)
 
   if (length(raw$doc_id) == 0L) {
-    cli::cli_warn("No matched patterns found.")
-    return(empty_locate_df())
+    return(out)
   }
 
-  data.frame(raw)
+  row_ids <- split(seq_along(raw$doc_id), raw$doc_id)
+  res_list <- lapply(row_ids, \(rows) {
+    list(
+      pattern_id = raw$pattern_id[rows],
+      start = raw$start[rows],
+      end = raw$end[rows]
+    )
+  })
+  out[as.integer(names(row_ids))] <- res_list
+
+  out
+}
+
+#' Locate pattern matches as a data frame
+#'
+#' `ac_locate_df()` is the data-frame form of [ac_locate()]. It is useful when
+#' you want one row per match instead of one list element per document.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param doc A character vector of documents to search.
+#' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
+#'   matches. This is only supported when `ac` was built with
+#'   `match_kind = "standard"`.
+#' @param na How to handle `NA` documents. `"omit"` drops missing documents
+#'   (default); `"keep"` returns one row with missing result columns for each
+#'   missing document; `"error"` fails.
+#'
+#' @return A data frame with one row per match and four columns:
+#'   `doc_id`, `pattern_id`, `start`, and `end`.
+#' @export
+ac_locate_df <- function(
+  ac,
+  doc,
+  overlapping = FALSE,
+  na = c("omit", "keep", "error")
+) {
+  na <- rlang::arg_match(na)
+  if (!checkmate::test_character(doc)) {
+    cli::cli_abort("{.arg doc} must be a character vector.")
+  }
+  if (na == "error" && anyNA(doc)) {
+    cli::cli_abort(c(
+      "x" = "{.arg doc} must not contain missing values because {.arg na = \"error\"}.",
+      "i" = "Use {.code na = \"omit\"} to skip missing values."
+    ))
+  }
+
+  hits <- ac_locate(
+    ac,
+    doc,
+    overlapping = overlapping,
+    na = ifelse(na == "omit", "empty", na)
+  )
+  locate_list_to_df(hits)
 }
 
 #' Detect pattern matches in documents
@@ -331,6 +403,49 @@ ac_extract <- function(
   out
 }
 
+#' Extract pattern matches as a data frame
+#'
+#' `ac_extract_df()` is the data-frame form of [ac_extract()]. It is useful when
+#' you want one row per match instead of one list element per document.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param doc A character vector of documents to search.
+#' @param overlapping Default is `FALSE`. If `TRUE`, extract overlapping
+#'   matches. This is only supported when `ac` was built with
+#'   `match_kind = "standard"`.
+#' @param na How to handle `NA` documents. `"omit"` drops missing documents
+#'   (default); `"keep"` returns one row with missing result columns for each
+#'   missing document; `"error"` fails.
+#'
+#' @return A data frame with one row per match and three columns:
+#'   `doc_id`, `matches`, and `patterns`.
+#' @export
+ac_extract_df <- function(
+  ac,
+  doc,
+  overlapping = FALSE,
+  na = c("omit", "keep", "error")
+) {
+  na <- rlang::arg_match(na)
+  if (!checkmate::test_character(doc)) {
+    cli::cli_abort("{.arg doc} must be a character vector.")
+  }
+  if (na == "error" && anyNA(doc)) {
+    cli::cli_abort(c(
+      "x" = "{.arg doc} must not contain missing values because {.arg na = \"error\"}.",
+      "i" = "Use {.code na = \"omit\"} to skip missing values."
+    ))
+  }
+
+  hits <- ac_extract(
+    ac,
+    doc,
+    overlapping = overlapping,
+    na = ifelse(na == "omit", "empty", na)
+  )
+  extract_list_to_df(hits)
+}
+
 
 #' Return patterns stored in an automaton
 #'
@@ -386,12 +501,67 @@ validate_ac_automaton <- function(ac) {
   ac
 }
 
-# Create an empty data frame with the same structure as the output of `ac_locate()`.
+locate_list_to_df <- function(hits) {
+  rows <- lapply(seq_along(hits), \(doc_id) {
+    hit <- hits[[doc_id]]
+    n <- length(hit$pattern_id)
+    if (n == 0L) {
+      return(NULL)
+    }
+
+    data.frame(
+      doc_id = rep.int(doc_id, n),
+      pattern_id = hit$pattern_id,
+      start = hit$start,
+      end = hit$end
+    )
+  })
+
+  compact_rows(rows, empty_locate_df)
+}
+
+extract_list_to_df <- function(hits) {
+  rows <- lapply(seq_along(hits), \(doc_id) {
+    hit <- hits[[doc_id]]
+    n <- length(hit$matches)
+    if (n == 0L) {
+      return(NULL)
+    }
+
+    data.frame(
+      doc_id = rep.int(doc_id, n),
+      matches = hit$matches,
+      patterns = hit$patterns
+    )
+  })
+
+  compact_rows(rows, empty_extract_df)
+}
+
+compact_rows <- function(rows, empty) {
+  rows <- rows[!vapply(rows, is.null, logical(1))]
+  if (length(rows) == 0L) {
+    return(empty())
+  }
+
+  out <- do.call(rbind, rows)
+  row.names(out) <- NULL
+  out
+}
+
 empty_locate_df <- function() {
   data.frame(
     doc_id = integer(),
     pattern_id = integer(),
     start = integer(),
     end = integer()
+  )
+}
+
+empty_extract_df <- function() {
+  data.frame(
+    doc_id = integer(),
+    matches = character(),
+    patterns = character()
   )
 }

@@ -16,6 +16,53 @@ test_that("ac_extract returns matches and patterns per document", {
   expect_equal(hits[[3]], list(matches = NA_character_, patterns = NA_character_))
 })
 
+test_that("ac_extract_df returns one row per match", {
+  ac <- ac_build(c("hello", "world"))
+  doc <- c("hello world", NA_character_, "nothing", "world")
+
+  hits <- ac_extract_df(ac, doc)
+
+  expect_equal(
+    hits,
+    data.frame(
+      doc_id = c(1L, 1L, 4L),
+      matches = c("hello", "world", "world"),
+      patterns = c("hello", "world", "world")
+    )
+  )
+})
+
+test_that("ac_extract_df keeps actual matches and pattern values", {
+  ac <- ac_build(c("abc", "你a😀"), ascii_case_insensitive = TRUE)
+  doc <- c("ABC 你a😀", NA_character_)
+
+  hits <- ac_extract_df(ac, doc, na = "keep")
+
+  expect_equal(
+    hits,
+    data.frame(
+      doc_id = c(1L, 1L, 2L),
+      matches = c("ABC", "你a😀", NA_character_),
+      patterns = c("abc", "你a😀", NA_character_)
+    )
+  )
+})
+
+test_that("ac_extract_df returns an empty data frame when no patterns match", {
+  ac <- ac_build("hello")
+
+  hits <- ac_extract_df(ac, c("world", NA_character_))
+
+  expect_equal(
+    hits,
+    data.frame(
+      doc_id = integer(),
+      matches = character(),
+      patterns = character()
+    )
+  )
+})
+
 test_that("ac_extract distinguishes matched text from pattern values", {
   ac <- ac_build("abc", ascii_case_insensitive = TRUE)
 
@@ -57,6 +104,11 @@ test_that("ac_extract errors when overlapping search is incompatible with match_
     error = TRUE,
     ac_extract(ac, "hello", overlapping = TRUE)
   )
+
+  expect_snapshot(
+    error = TRUE,
+    ac_extract_df(ac, "hello", overlapping = TRUE)
+  )
 })
 
 test_that("ac_extract errors when missing documents are disallowed", {
@@ -65,5 +117,10 @@ test_that("ac_extract errors when missing documents are disallowed", {
   expect_snapshot(
     error = TRUE,
     ac_extract(ac, c("hello", NA_character_), na = "error")
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    ac_extract_df(ac, c("hello", NA_character_), na = "error")
   )
 })
