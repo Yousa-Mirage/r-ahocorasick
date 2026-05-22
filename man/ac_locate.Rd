@@ -14,13 +14,13 @@ ac_locate(ac, doc, overlapping = FALSE, na = c("keep", "empty", "error"))
 \item{overlapping}{Default is \code{FALSE}. If \code{TRUE}, report overlapping
 matches. This is only supported when \code{ac} was built with \code{match_kind = "standard"}.}
 
-\item{na}{How to handle \code{NA} documents. \code{"keep"} returns \code{NA_integer_}
-in \code{pattern_id}, \code{start}, and \code{end} (default); \code{"empty"} treats missing
-documents as no matches; \code{"error"} fails.}
+\item{na}{How to handle \code{NA} documents. \code{"keep"} returns one row with
+missing \code{pattern_id}, \code{start}, and \code{end} values (default); \code{"empty"}
+treats missing documents as no matches; \code{"error"} fails.}
 }
 \value{
-A list with the same length as \code{doc}. Each element is a list with
-three integer vectors:
+A list with the same length as \code{doc}. Each element is a data frame
+with one row per match and three columns:
 \itemize{
 \item \code{pattern_id}: Index of the matched pattern in \code{ac_patterns(ac)}.
 \item \code{start}: 1-based index of the first character in each match.
@@ -33,10 +33,11 @@ returns one list element per document. Character offsets are 1-based and
 inclusive, so they can be used directly with \code{substr()}.
 }
 \examples{
-if (requireNamespace("dplyr", quietly = TRUE)) {
+if (requireNamespace("tidyverse", quietly = TRUE)) {
   ac <- ac_build(c("hello", "world"))
-  docs <- data.frame(doc = c("hello world", "nothing", "world"))
-  dplyr::mutate(docs, hits = ac_locate(ac, doc))
+  tibble::tibble(doc = c("hello world", "nothing", "world")) |> 
+    dplyr::mutate(hits = ac_locate(ac, doc)) |> 
+    tidyr::unnest(hits)
 }
 }
 \seealso{

@@ -15,13 +15,13 @@ ac_extract(ac, doc, overlapping = FALSE, na = c("keep", "empty", "error"))
 matches. This is only supported when \code{ac} was built with
 \code{match_kind = "standard"}.}
 
-\item{na}{How to handle \code{NA} documents. \code{"keep"} returns \code{NA_character_}
-in both \code{matches} and \code{patterns} (default); \code{"empty"} treats missing
-documents as no matches; \code{"error"} fails.}
+\item{na}{How to handle \code{NA} documents. \code{"keep"} returns one row with
+missing \code{matches} and \code{patterns} values (default); \code{"empty"} treats
+missing documents as no matches; \code{"error"} fails.}
 }
 \value{
-A list with the same length as \code{doc}. Each element is a list with
-two character vectors:
+A list with the same length as \code{doc}. Each element is a data frame
+with one row per match and two columns:
 \itemize{
 \item \code{matches}: Text matched in the document.
 \item \code{patterns}: Pattern values corresponding to each match.
@@ -32,10 +32,11 @@ two character vectors:
 the matched text and the corresponding pattern values.
 }
 \examples{
-if (requireNamespace("dplyr", quietly = TRUE)) {
+if (requireNamespace("tidyverse", quietly = TRUE)) {
   ac <- ac_build(c("hello", "world"))
-  docs <- data.frame(doc = c("hello world", "nothing", "world"))
-  dplyr::mutate(docs, matches = ac_extract(ac, doc))
+  tibble::tibble(doc = c("hello world", "nothing", "world")) |> 
+    dplyr::mutate(extracted = ac_extract(ac, doc)) |> 
+    tidyr::unnest(extracted)
 }
 }
 \seealso{

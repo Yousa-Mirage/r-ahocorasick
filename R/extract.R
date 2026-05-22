@@ -8,21 +8,22 @@
 #' @param overlapping Default is `FALSE`. If `TRUE`, extract overlapping
 #'   matches. This is only supported when `ac` was built with
 #'   `match_kind = "standard"`.
-#' @param na How to handle `NA` documents. `"keep"` returns `NA_character_`
-#'   in both `matches` and `patterns` (default); `"empty"` treats missing
-#'   documents as no matches; `"error"` fails.
+#' @param na How to handle `NA` documents. `"keep"` returns one row with
+#'   missing `matches` and `patterns` values (default); `"empty"` treats
+#'   missing documents as no matches; `"error"` fails.
 #'
-#' @return A list with the same length as `doc`. Each element is a list with
-#'   two character vectors:
+#' @return A list with the same length as `doc`. Each element is a data frame
+#'   with one row per match and two columns:
 #'  * `matches`: Text matched in the document.
 #'  * `patterns`: Pattern values corresponding to each match.
 #' @seealso [ac_extract_df()], [ac_locate()], [ac_detect()], [ac_count()].
 #'
 #' @examples
-#' if (requireNamespace("dplyr", quietly = TRUE)) {
+#' if (requireNamespace("tidyverse", quietly = TRUE)) {
 #'   ac <- ac_build(c("hello", "world"))
-#'   docs <- data.frame(doc = c("hello world", "nothing", "world"))
-#'   dplyr::mutate(docs, matches = ac_extract(ac, doc))
+#'   tibble::tibble(doc = c("hello world", "nothing", "world")) |>
+#'     dplyr::mutate(extracted = ac_extract(ac, doc)) |>
+#'     tidyr::unnest(extracted)
 #' }
 #' @export
 ac_extract <- function(
@@ -58,13 +59,13 @@ ac_extract <- function(
 
   # Initialize output with empty matches/patterns
   doc <- enc2utf8(doc)
-  out <- lapply(doc, \(...) list(matches = character(), patterns = character()))
+  out <- lapply(doc, \(...) empty_extract_result())
 
   missing <- is.na(doc)
   if (na == "keep" && any(missing)) {
     out[missing] <- lapply(
       out[missing],
-      \(...) list(matches = NA_character_, patterns = NA_character_)
+      \(...) missing_extract_result()
     )
   }
 
@@ -84,7 +85,7 @@ ac_extract <- function(
   # Group matches by document and map pattern IDs to values
   row_ids <- split(seq_along(raw$doc_id), raw$doc_id)
   res_list <- lapply(row_ids, \(rows) {
-    list(
+    data.frame(
       matches = raw$matches[rows],
       patterns = unname(ac$patterns[raw$pattern_id[rows]])
     )
@@ -147,19 +148,32 @@ ac_extract_df <- function(
 extract_list_to_df <- function(hits) {
   rows <- lapply(seq_along(hits), \(doc_id) {
     hit <- hits[[doc_id]]
-    n <- length(hit$matches)
+    n <- nrow(hit)
     if (n == 0L) {
       return(NULL)
     }
 
     data.frame(
       doc_id = rep.int(doc_id, n),
-      matches = hit$matches,
-      patterns = hit$patterns
+      hit
     )
   })
 
   compact_rows(rows, empty_extract_df)
+}
+
+empty_extract_result <- function() {
+  data.frame(
+    matches = character(),
+    patterns = character()
+  )
+}
+
+missing_extract_result <- function() {
+  data.frame(
+    matches = NA_character_,
+    patterns = NA_character_
+  )
 }
 
 empty_extract_df <- function() {

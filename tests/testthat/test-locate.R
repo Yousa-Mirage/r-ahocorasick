@@ -7,7 +7,7 @@ test_that("ac_locate returns pattern ids and offsets per document", {
   expect_named(hits, names(doc))
   expect_equal(
     hits[[1]],
-    list(
+    data.frame(
       pattern_id = c(1L, 2L),
       start = c(1L, 7L),
       end = c(5L, 11L)
@@ -15,13 +15,16 @@ test_that("ac_locate returns pattern ids and offsets per document", {
   )
   expect_equal(
     hits[[2]],
-    list(
+    data.frame(
       pattern_id = c(2L, 1L),
       start = c(1L, 7L),
       end = c(5L, 11L)
     )
   )
-  expect_equal(hits[[3]], list(pattern_id = integer(), start = integer(), end = integer()))
+  expect_equal(
+    hits[[3]],
+    data.frame(pattern_id = integer(), start = integer(), end = integer())
+  )
 })
 
 test_that("ac_locate_df returns one row per match", {
@@ -80,9 +83,16 @@ test_that("ac_locate maps UTF-8 offsets and keeps missing documents", {
 
   hits <- ac_locate(ac, doc)
 
-  expect_equal(hits[[1]], list(pattern_id = 1L, start = 3L, end = 7L))
-  expect_equal(hits[[2]], list(pattern_id = NA_integer_, start = NA_integer_, end = NA_integer_))
-  expect_equal(hits[[3]], list(pattern_id = 2L, start = 1L, end = 5L))
+  expect_equal(hits[[1]], data.frame(pattern_id = 1L, start = 3L, end = 7L))
+  expect_equal(
+    hits[[2]],
+    data.frame(
+      pattern_id = NA_integer_,
+      start = NA_integer_,
+      end = NA_integer_
+    )
+  )
+  expect_equal(hits[[3]], data.frame(pattern_id = 2L, start = 1L, end = 5L))
 })
 
 test_that("ac_locate respects overlap", {
@@ -90,7 +100,7 @@ test_that("ac_locate respects overlap", {
 
   expect_equal(
     ac_locate(ac_standard, "ababa", overlapping = TRUE)[[1]],
-    list(
+    data.frame(
       pattern_id = c(1L, 2L, 1L),
       start = c(1L, 2L, 3L),
       end = c(3L, 4L, 5L)
@@ -106,7 +116,7 @@ test_that("ac_locate handles mixed Chinese English and emoji patterns", {
 
   expect_equal(
     hits[[1]],
-    list(
+    data.frame(
       pattern_id = c(1L, 2L),
       start = c(1L, 2L),
       end = c(3L, 4L)
@@ -114,7 +124,7 @@ test_that("ac_locate handles mixed Chinese English and emoji patterns", {
   )
   expect_equal(
     hits[[2]],
-    list(
+    data.frame(
       pattern_id = c(3L, 4L),
       start = c(1L, 6L),
       end = c(3L, 7L)
@@ -130,7 +140,7 @@ test_that("ac_locate respects leftmost match semantics", {
 
   expect_equal(
     ac_locate(ac_leftmost, "discontent")[[1]],
-    list(
+    data.frame(
       pattern_id = 3L,
       start = 1L,
       end = 10L
@@ -143,7 +153,7 @@ test_that("ac_locate honors case-insensitive matching", {
 
   expect_equal(
     ac_locate(ac_case, "ABC")[[1]],
-    list(
+    data.frame(
       pattern_id = 1L,
       start = 1L,
       end = 3L
@@ -164,7 +174,10 @@ test_that("ac_locate returns empty triples when no patterns match", {
 
   hits <- ac_locate(ac, "world")
 
-  expect_equal(hits[[1]], list(pattern_id = integer(), start = integer(), end = integer()))
+  expect_equal(
+    hits[[1]],
+    data.frame(pattern_id = integer(), start = integer(), end = integer())
+  )
 })
 
 test_that("ac_locate can treat missing documents as empty triples", {
@@ -172,9 +185,15 @@ test_that("ac_locate can treat missing documents as empty triples", {
 
   hits <- ac_locate(ac, c("hello", NA_character_, "world"), na = "empty")
 
-  expect_equal(hits[[1]], list(pattern_id = 1L, start = 1L, end = 5L))
-  expect_equal(hits[[2]], list(pattern_id = integer(), start = integer(), end = integer()))
-  expect_equal(hits[[3]], list(pattern_id = integer(), start = integer(), end = integer()))
+  expect_equal(hits[[1]], data.frame(pattern_id = 1L, start = 1L, end = 5L))
+  expect_equal(
+    hits[[2]],
+    data.frame(pattern_id = integer(), start = integer(), end = integer())
+  )
+  expect_equal(
+    hits[[3]],
+    data.frame(pattern_id = integer(), start = integer(), end = integer())
+  )
 })
 
 test_that("ac_locate errors when overlapping search is incompatible with match_kind", {

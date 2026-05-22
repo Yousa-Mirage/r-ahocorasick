@@ -7,13 +7,13 @@ test_that("ac_extract returns matches and patterns per document", {
   expect_named(hits, names(doc))
   expect_equal(
     hits[[1]],
-    list(
+    data.frame(
       matches = c("hello", "world", "hello"),
       patterns = c("hello", "world", "hello")
     )
   )
-  expect_equal(hits[[2]], list(matches = character(), patterns = character()))
-  expect_equal(hits[[3]], list(matches = NA_character_, patterns = NA_character_))
+  expect_equal(hits[[2]], data.frame(matches = character(), patterns = character()))
+  expect_equal(hits[[3]], data.frame(matches = NA_character_, patterns = NA_character_))
 })
 
 test_that("ac_extract_df returns one row per match", {
@@ -68,7 +68,7 @@ test_that("ac_extract distinguishes matched text from pattern values", {
 
   hits <- ac_extract(ac, "ABC")
 
-  expect_equal(hits[[1]], list(matches = "ABC", patterns = "abc"))
+  expect_equal(hits[[1]], data.frame(matches = "ABC", patterns = "abc"))
 })
 
 test_that("ac_extract supports overlapping and UTF-8 matches", {
@@ -79,12 +79,12 @@ test_that("ac_extract supports overlapping and UTF-8 matches", {
 
   expect_equal(
     hits[[1]],
-    list(
+    data.frame(
       matches = c("aba", "bab", "aba"),
       patterns = c("aba", "bab", "aba")
     )
   )
-  expect_equal(hits[[2]], list(matches = "你a😀", patterns = "你a😀"))
+  expect_equal(hits[[2]], data.frame(matches = "你a😀", patterns = "你a😀"))
 })
 
 test_that("ac_extract can treat missing documents as empty matches", {
@@ -92,9 +92,9 @@ test_that("ac_extract can treat missing documents as empty matches", {
 
   hits <- ac_extract(ac, c("hello", NA_character_, "world"), na = "empty")
 
-  expect_equal(hits[[1]], list(matches = "hello", patterns = "hello"))
-  expect_equal(hits[[2]], list(matches = character(), patterns = character()))
-  expect_equal(hits[[3]], list(matches = character(), patterns = character()))
+  expect_equal(hits[[1]], data.frame(matches = "hello", patterns = "hello"))
+  expect_equal(hits[[2]], data.frame(matches = character(), patterns = character()))
+  expect_equal(hits[[3]], data.frame(matches = character(), patterns = character()))
 })
 
 test_that("ac_extract errors when overlapping search is incompatible with match_kind", {

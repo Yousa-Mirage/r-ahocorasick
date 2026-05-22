@@ -25,5 +25,7 @@ Imports:
     rlang
 Suggests: 
     dplyr,
+    tibble,
+    tidyr,
     testthat (>= 3.0.0)
 Language: en-US

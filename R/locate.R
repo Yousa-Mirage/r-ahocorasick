@@ -8,22 +8,23 @@
 #' @param doc A character vector of documents to search.
 #' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
 #'   matches. This is only supported when `ac` was built with `match_kind = "standard"`.
-#' @param na How to handle `NA` documents. `"keep"` returns `NA_integer_`
-#'   in `pattern_id`, `start`, and `end` (default); `"empty"` treats missing
-#'   documents as no matches; `"error"` fails.
+#' @param na How to handle `NA` documents. `"keep"` returns one row with
+#'   missing `pattern_id`, `start`, and `end` values (default); `"empty"`
+#'   treats missing documents as no matches; `"error"` fails.
 #'
-#' @return A list with the same length as `doc`. Each element is a list with
-#'   three integer vectors:
+#' @return A list with the same length as `doc`. Each element is a data frame
+#'   with one row per match and three columns:
 #'  * `pattern_id`: Index of the matched pattern in `ac_patterns(ac)`.
 #'  * `start`: 1-based index of the first character in each match.
 #'  * `end`: 1-based index of the last character in each match.
 #' @seealso [ac_locate_df()], [ac_extract()], [ac_detect()], [ac_count()].
 #'
 #' @examples
-#' if (requireNamespace("dplyr", quietly = TRUE)) {
+#' if (requireNamespace("tidyverse", quietly = TRUE)) {
 #'   ac <- ac_build(c("hello", "world"))
-#'   docs <- data.frame(doc = c("hello world", "nothing", "world"))
-#'   dplyr::mutate(docs, hits = ac_locate(ac, doc))
+#'   tibble::tibble(doc = c("hello world", "nothing", "world")) |>
+#'     dplyr::mutate(hits = ac_locate(ac, doc)) |>
+#'     tidyr::unnest(hits)
 #' }
 #' @export
 ac_locate <- function(
@@ -57,25 +58,13 @@ ac_locate <- function(
   }
 
   doc <- enc2utf8(doc)
-  out <- lapply(doc, \(...) {
-    list(
-      pattern_id = integer(),
-      start = integer(),
-      end = integer()
-    )
-  })
+  out <- lapply(doc, \(...) empty_locate_result())
 
   missing <- is.na(doc)
   if (na == "keep" && any(missing)) {
     out[missing] <- lapply(
       out[missing],
-      \(...) {
-        list(
-          pattern_id = NA_integer_,
-          start = NA_integer_,
-          end = NA_integer_
-        )
-      }
+      \(...) missing_locate_result()
     )
   }
 
@@ -93,7 +82,7 @@ ac_locate <- function(
 
   row_ids <- split(seq_along(raw$doc_id), raw$doc_id)
   res_list <- lapply(row_ids, \(rows) {
-    list(
+    data.frame(
       pattern_id = raw$pattern_id[rows],
       start = raw$start[rows],
       end = raw$end[rows]
@@ -156,20 +145,34 @@ ac_locate_df <- function(
 locate_list_to_df <- function(hits) {
   rows <- lapply(seq_along(hits), \(doc_id) {
     hit <- hits[[doc_id]]
-    n <- length(hit$pattern_id)
+    n <- nrow(hit)
     if (n == 0L) {
       return(NULL)
     }
 
     data.frame(
       doc_id = rep.int(doc_id, n),
-      pattern_id = hit$pattern_id,
-      start = hit$start,
-      end = hit$end
+      hit
     )
   })
 
   compact_rows(rows, empty_locate_df)
+}
+
+empty_locate_result <- function() {
+  data.frame(
+    pattern_id = integer(),
+    start = integer(),
+    end = integer()
+  )
+}
+
+missing_locate_result <- function() {
+  data.frame(
+    pattern_id = NA_integer_,
+    start = NA_integer_,
+    end = NA_integer_
+  )
 }
 
 empty_locate_df <- function() {
