@@ -9,6 +9,8 @@ rust_ac_build <- function(patterns, match_kind, implementation, ascii_case_insen
 
 rust_ac_locate <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_locate, ptr, doc, doc_ids, overlapping)
 
+rust_ac_extract <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_extract, ptr, doc, doc_ids, overlapping)
+
 rust_ac_detect <- function(ptr, doc) .Call(wrap__rust_ac_detect, ptr, doc)
 
 rust_ac_count <- function(ptr, doc, overlapping) .Call(wrap__rust_ac_count, ptr, doc, overlapping)

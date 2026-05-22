@@ -25,6 +25,43 @@ struct RawMatch {
     end_byte: usize,
 }
 
+// Collect raw byte-range matches for a single haystack.
+fn collect_raw_matches(
+    automaton: &AhoCorasick,
+    haystack: &str,
+    overlapping: bool,
+) -> Result<Vec<RawMatch>> {
+    let mut raw_matches = Vec::new();
+
+    if overlapping {
+        let matches = automaton
+            .try_find_overlapping_iter(haystack.as_bytes())
+            .map_err(|err| Error::Other(err.to_string()))?;
+
+        for mat in matches {
+            raw_matches.push(RawMatch {
+                pattern_id: (mat.pattern().as_usize() + 1) as i32,
+                start_byte: mat.start(),
+                end_byte: mat.end(),
+            });
+        }
+    } else {
+        let matches = automaton
+            .try_find_iter(haystack.as_bytes())
+            .map_err(|err| Error::Other(err.to_string()))?;
+
+        for mat in matches {
+            raw_matches.push(RawMatch {
+                pattern_id: (mat.pattern().as_usize() + 1) as i32,
+                start_byte: mat.start(),
+                end_byte: mat.end(),
+            });
+        }
+    }
+
+    Ok(raw_matches)
+}
+
 // Parse the R-facing match kind string into the Rust enum used by the builder.
 fn parse_match_kind(match_kind: &str) -> MatchKind {
     match match_kind {
@@ -115,37 +152,8 @@ fn rust_ac_locate(
 
     // Search each haystack independently.
     for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
-        let mut raw_matches = Vec::new();
-
-        if overlapping {
-            let matches = automaton
-                .ac
-                .try_find_overlapping_iter(haystack.as_bytes())
-                .map_err(|err| Error::Other(err.to_string()))?;
-
-            for mat in matches {
-                // Store byte offsets first so conversion can be batched for this haystack.
-                raw_matches.push(RawMatch {
-                    pattern_id: (mat.pattern().as_usize() + 1) as i32,
-                    start_byte: mat.start(),
-                    end_byte: mat.end(),
-                });
-            }
-        } else {
-            let matches = automaton
-                .ac
-                .try_find_iter(haystack.as_bytes())
-                .map_err(|err| Error::Other(err.to_string()))?;
-
-            for mat in matches {
-                // Store byte offsets first so conversion can be batched for this haystack.
-                raw_matches.push(RawMatch {
-                    pattern_id: (mat.pattern().as_usize() + 1) as i32,
-                    start_byte: mat.start(),
-                    end_byte: mat.end(),
-                });
-            }
-        }
+        // Store byte offsets first so conversion can be batched for this haystack.
+        let raw_matches = collect_raw_matches(&automaton.ac, haystack, overlapping)?;
 
         // Build a compact lookup table for only the offsets returned by this search.
         let offset_map = Utf8OffsetMap::for_offsets(
@@ -172,6 +180,43 @@ fn rust_ac_locate(
         pattern_id = out_pattern_id,
         start = out_start,
         end = out_end
+    );
+
+    Ok(list)
+}
+
+// Return matched text and pattern ids for each haystack.
+#[extendr]
+fn rust_ac_extract(
+    ptr: ExternalPtr<AcAutomaton>,
+    doc: Vec<String>,
+    doc_ids: Vec<i32>,
+    overlapping: bool,
+) -> Result<List> {
+    let automaton = ptr.try_addr()?;
+
+    let mut out_doc_id = Vec::new();
+    let mut out_pattern_id = Vec::new();
+    let mut out_matches = Vec::new();
+
+    // Search each haystack independently.
+    for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
+        let raw_matches = collect_raw_matches(&automaton.ac, haystack, overlapping)?;
+
+        for raw_match in raw_matches {
+            let matched = haystack
+                .get(raw_match.start_byte..raw_match.end_byte)
+                .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
+            out_doc_id.push(*doc_id);
+            out_pattern_id.push(raw_match.pattern_id);
+            out_matches.push(matched.to_string());
+        }
+    }
+
+    let list = list!(
+        doc_id = out_doc_id,
+        pattern_id = out_pattern_id,
+        matches = out_matches
     );
 
     Ok(list)
@@ -249,6 +294,7 @@ extendr_module! {
     mod ahocorasick;
     fn rust_ac_build;
     fn rust_ac_locate;
+    fn rust_ac_extract;
     fn rust_ac_detect;
     fn rust_ac_count;
     fn rust_ac_info;

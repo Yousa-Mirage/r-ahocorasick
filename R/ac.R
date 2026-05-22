@@ -242,6 +242,95 @@ ac_count <- function(
   out
 }
 
+#' Extract pattern matches from documents
+#'
+#' `ac_extract()` returns one list element per document. Each element contains
+#' the matched text and the corresponding pattern values.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param doc A character vector of documents to search.
+#' @param overlapping Default is `FALSE`. If `TRUE`, extract overlapping
+#'   matches. This is only supported when `ac` was built with
+#'   `match_kind = "standard"`.
+#' @param na How to handle `NA` documents. `"keep"` returns `NA_character_`
+#'   in both `matches` and `patterns` (default); `"empty"` treats missing
+#'   documents as no matches; `"error"` fails.
+#'
+#' @return A list with the same length as `doc`. Each element is a list with
+#'   two character vectors:
+#'  * `matches`: Text matched in the document.
+#'  * `patterns`: Pattern values corresponding to each match.
+#' @export
+ac_extract <- function(
+  ac,
+  doc,
+  overlapping = FALSE,
+  na = c("keep", "empty", "error")
+) {
+  # Validate inputs
+  ac <- validate_ac_automaton(ac)
+
+  if (!checkmate::test_character(doc)) {
+    cli::cli_abort("{.arg doc} must be a character vector.")
+  }
+  if (!checkmate::test_flag(overlapping)) {
+    cli::cli_abort("{.arg overlapping} must be a logical value.")
+  }
+  na <- rlang::arg_match(na)
+
+  if (overlapping && ac$info$match_kind != "standard") {
+    cli::cli_abort(c(
+      "{.code overlapping = TRUE} requires {.code match_kind = \"standard\"}.",
+      "i" = "Rebuild the automaton with {.code match_kind = \"standard\"} to enable overlapping search."
+    ))
+  }
+
+  if (na == "error" && anyNA(doc)) {
+    cli::cli_abort(c(
+      "x" = "{.arg doc} must not contain missing values because {.arg na = \"error\"}.",
+      "i" = "Use {.code na = \"keep\"} to keep missing values as {.code NA}."
+    ))
+  }
+
+  # Initialize output with empty matches/patterns
+  doc <- enc2utf8(doc)
+  out <- lapply(doc, \(...) list(matches = character(), patterns = character()))
+
+  missing <- is.na(doc)
+  if (na == "keep" && any(missing)) {
+    out[missing] <- lapply(
+      out[missing],
+      \(...) list(matches = NA_character_, patterns = NA_character_)
+    )
+  }
+
+  keep <- !missing
+  if (!any(keep)) {
+    return(out)
+  }
+
+  # Extract matches by Rust
+  doc_ids <- as.integer(which(keep))
+  raw <- rust_ac_extract(ac$ptr, doc[keep], doc_ids, overlapping)
+
+  if (length(raw$doc_id) == 0L) {
+    return(out)
+  }
+
+  # Group matches by document and map pattern IDs to values
+  row_ids <- split(seq_along(raw$doc_id), raw$doc_id)
+  res_list <- lapply(row_ids, \(rows) {
+    list(
+      matches = raw$matches[rows],
+      patterns = unname(ac$patterns[raw$pattern_id[rows]])
+    )
+  })
+  indices <- as.integer(names(row_ids))
+  out[indices] <- res_list
+
+  out
+}
+
 
 #' Return patterns stored in an automaton
 #'
