@@ -102,19 +102,19 @@ fn rust_ac_build(
 #[extendr]
 fn rust_ac_locate(
     ptr: ExternalPtr<AcAutomaton>,
-    x: Vec<String>,
-    text_ids: Vec<i32>,
+    doc: Vec<String>,
+    doc_ids: Vec<i32>,
     overlapping: bool,
 ) -> Result<List> {
     let automaton = ptr.try_addr()?;
 
-    let mut out_text_id = Vec::new();
+    let mut out_doc_id = Vec::new();
     let mut out_pattern_id = Vec::new();
     let mut out_start = Vec::new();
     let mut out_end = Vec::new();
 
     // Search each haystack independently.
-    for (haystack, text_id) in x.iter().zip(text_ids.iter()) {
+    for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
         let mut raw_matches = Vec::new();
 
         if overlapping {
@@ -160,7 +160,7 @@ fn rust_ac_locate(
             let range = offset_map
                 .r_char_range(raw_match.start_byte, raw_match.end_byte)
                 .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
-            out_text_id.push(*text_id);
+            out_doc_id.push(*doc_id);
             out_pattern_id.push(raw_match.pattern_id);
             out_start.push(range.start);
             out_end.push(range.end);
@@ -168,7 +168,7 @@ fn rust_ac_locate(
     }
 
     let list = list!(
-        text_id = out_text_id,
+        doc_id = out_doc_id,
         pattern_id = out_pattern_id,
         start = out_start,
         end = out_end

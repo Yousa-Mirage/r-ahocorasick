@@ -77,27 +77,27 @@ ac_build <- function(
 #' they can be used directly with `substr()`.
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
-#' @param x A character vector of strings to search.
+#' @param doc A character vector of documents to search.
 #' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
 #'   matches. This is only supported when `ac` was built with `match_kind = "standard"`.
 #' @param na How to handle `NA` strings. `"omit"` skips them (default); `"error"` fails.
 #'
 #' @return A data frame with match metadata and character offsets. The columns are:
-#'  * `text_id`: Index of the input string in `x`.
+#'  * `doc_id`: Index of the input document in `doc`.
 #'  * `pattern_id`: Index of the matched pattern in `ac_patterns(ac)`.
 #'  * `start`: 1-based index of the first character in the match.
 #'  * `end`: 1-based index of the last character in the match.
 #' @export
 ac_locate <- function(
   ac,
-  x,
+  doc,
   overlapping = FALSE,
   na = c("omit", "error")
 ) {
   ac <- validate_ac_automaton(ac)
 
-  if (!checkmate::test_character(x, min.len = 1L, all.missing = FALSE)) {
-    cli::cli_abort("{.arg x} must be a non-empty character vector.")
+  if (!checkmate::test_character(doc, min.len = 1L, all.missing = FALSE)) {
+    cli::cli_abort("{.arg doc} must be a non-empty character vector.")
   }
   if (!checkmate::test_flag(overlapping)) {
     cli::cli_abort("{.arg overlapping} must be a logical value.")
@@ -109,24 +109,24 @@ ac_locate <- function(
       "{.code overlapping = TRUE} requires {.code match_kind = \"standard\"}."
     )
   }
-  if (na == "error" && anyNA(x)) {
-    cli::cli_abort("{.arg x} must not contain missing values because {.arg na = \"error\"}.")
+  if (na == "error" && anyNA(doc)) {
+    cli::cli_abort("{.arg doc} must not contain missing values because {.arg na = \"error\"}.")
   }
 
-  x <- enc2utf8(x)
+  doc <- enc2utf8(doc)
 
-  keep <- !is.na(x)
-  x <- x[keep]
-  x_ids <- as.integer(which(keep))
+  keep <- !is.na(doc)
+  doc <- doc[keep]
+  doc_ids <- as.integer(which(keep))
 
-  if (length(x) == 0L) {
-    cli::cli_warn("No non-missing strings to search.")
+  if (length(doc) == 0L) {
+    cli::cli_warn("No non-missing documents to search.")
     return(empty_locate_df())
   }
 
-  raw <- rust_ac_locate(ac$ptr, x, x_ids, overlapping)
+  raw <- rust_ac_locate(ac$ptr, doc, doc_ids, overlapping)
 
-  if (length(raw$text_id) == 0L) {
+  if (length(raw$doc_id) == 0L) {
     cli::cli_warn("No matched patterns found.")
     return(empty_locate_df())
   }
@@ -192,7 +192,7 @@ validate_ac_automaton <- function(ac) {
 # Create an empty data frame with the same structure as the output of `ac_locate()`.
 empty_locate_df <- function() {
   data.frame(
-    text_id = integer(),
+    doc_id = integer(),
     pattern_id = integer(),
     start = integer(),
     end = integer()

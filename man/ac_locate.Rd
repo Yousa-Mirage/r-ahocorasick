@@ -4,12 +4,12 @@
 \alias{ac_locate}
 \title{Locate pattern matches in strings}
 \usage{
-ac_locate(ac, x, overlapping = FALSE, na = c("omit", "error"))
+ac_locate(ac, doc, overlapping = FALSE, na = c("omit", "error"))
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
 
-\item{x}{A character vector of strings to search.}
+\item{doc}{A character vector of documents to search.}
 
 \item{overlapping}{Default is \code{FALSE}. If \code{TRUE}, report overlapping
 matches. This is only supported when \code{ac} was built with \code{match_kind = "standard"}.}
@@ -19,7 +19,7 @@ matches. This is only supported when \code{ac} was built with \code{match_kind =
 \value{
 A data frame with match metadata and character offsets. The columns are:
 \itemize{
-\item \code{text_id}: Index of the input string in \code{x}.
+\item \code{doc_id}: Index of the input document in \code{doc}.
 \item \code{pattern_id}: Index of the matched pattern in \code{ac_patterns(ac)}.
 \item \code{start}: 1-based index of the first character in the match.
 \item \code{end}: 1-based index of the last character in the match.
