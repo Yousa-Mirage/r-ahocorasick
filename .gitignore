@@ -12,7 +12,6 @@ ref/*
 *.Rcheck/
 Meta/
 doc/
-man/
 src/*.o
 src/*.so
 src/*.dll

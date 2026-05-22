@@ -5,8 +5,10 @@
 #' @useDynLib ahocorasick, .registration = TRUE
 NULL
 
-#' Return string `"Hello world!"` to R.
-#' @export
-hello_world <- function() .Call(wrap__hello_world)
+rust_ac_build <- function(patterns, match_kind, implementation, ascii_case_insensitive) .Call(wrap__rust_ac_build, patterns, match_kind, implementation, ascii_case_insensitive)
+
+rust_ac_locate <- function(ptr, x, text_ids, overlapping) .Call(wrap__rust_ac_locate, ptr, x, text_ids, overlapping)
+
+rust_ac_info <- function(ptr) .Call(wrap__rust_ac_info, ptr)
 
 # nolint end

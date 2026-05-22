@@ -1,11 +1,26 @@
 alias fmt := format
-# alias doc := document
+alias doc := document
 
 default:
     @just --list
 
 format:
     r-air format .
+    cargo fmt --manifest-path src/rust/Cargo.toml
 
 check:
     jarl check .
+    Rscript -e "devtools::spell_check()"
+    cargo clippy --manifest-path src/rust/Cargo.toml
+clean:
+    cargo clean --manifest-path src/rust/Cargo.toml
+
+document:
+    Rscript -e "devtools::document()"
+
+test:
+    TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"
+    cargo test --quiet --manifest-path src/rust/Cargo.toml
+
+update-wordlist:
+    Rscript -e "spelling::update_wordlist(confirm = FALSE)"

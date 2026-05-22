@@ -17,6 +17,13 @@ path = 'document.rs'
 aho-corasick = "1"
 extendr-api = '0.9.0'
 
+[lints.rust]
+warnings = "deny"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+
 [profile.release]
 lto = true
 codegen-units = 1

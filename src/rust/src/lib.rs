@@ -1,16 +1,182 @@
-use extendr_api::prelude::*;
+mod offsets;
 
-/// Return string `"Hello world!"` to R.
-/// @export
-#[extendr]
-fn hello_world() -> &'static str {
-    "Hello world!"
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, MatchKind};
+use extendr_api::prelude::*;
+use extendr_api::Result;
+
+use offsets::Utf8OffsetMap;
+
+// The Aho-Corasick automaton and its metadata
+struct AcAutomaton {
+    ac: AhoCorasick,
+    patterns_len: usize,
+    min_pattern_len: usize,
+    max_pattern_len: usize,
+    match_kind: MatchKind,
+    implementation: AhoCorasickKind,
+    ascii_case_insensitive: bool,
+    memory_usage: usize,
 }
 
-// Macro to generate exports.
-// This ensures exported functions are registered with R.
-// See corresponding C code in `entrypoint.c`.
+// Parse the R-facing match kind string into the Rust enum used by the builder.
+fn parse_match_kind(match_kind: &str) -> MatchKind {
+    match match_kind {
+        "standard" => MatchKind::Standard,
+        "leftmost_first" => MatchKind::LeftmostFirst,
+        "leftmost_longest" => MatchKind::LeftmostLongest,
+        _ => unreachable!("`match_kind` should have been validated by R"),
+    }
+}
+
+// Parse the optional implementation selector into the Rust enum used by the builder.
+fn parse_implementation(implementation: &str) -> Option<AhoCorasickKind> {
+    match implementation {
+        "auto" => None,
+        "noncontiguous_nfa" => Some(AhoCorasickKind::NoncontiguousNFA),
+        "contiguous_nfa" => Some(AhoCorasickKind::ContiguousNFA),
+        "dfa" => Some(AhoCorasickKind::DFA),
+        _ => unreachable!("`implementation` should have been validated by R"),
+    }
+}
+
+// Convert the Rust match kind back into the string exposed to R.
+fn match_kind_name(match_kind: MatchKind) -> &'static str {
+    match match_kind {
+        MatchKind::Standard => "standard",
+        MatchKind::LeftmostFirst => "leftmost_first",
+        MatchKind::LeftmostLongest => "leftmost_longest",
+        _ => unreachable!("unsupported MatchKind"),
+    }
+}
+
+// Convert the Rust implementation kind back into the string exposed to R.
+fn implementation_name(implementation: AhoCorasickKind) -> &'static str {
+    match implementation {
+        AhoCorasickKind::NoncontiguousNFA => "noncontiguous_nfa",
+        AhoCorasickKind::ContiguousNFA => "contiguous_nfa",
+        AhoCorasickKind::DFA => "dfa",
+        _ => unreachable!("unsupported AhoCorasickKind"),
+    }
+}
+
+// Build an Aho-Corasick automaton.
+#[extendr]
+fn rust_ac_build(
+    patterns: Vec<String>,
+    match_kind: String,
+    implementation: String,
+    ascii_case_insensitive: bool,
+) -> Result<ExternalPtr<AcAutomaton>> {
+    let parsed_match_kind = parse_match_kind(&match_kind);
+    let parsed_implementation = parse_implementation(&implementation);
+
+    let ac = AhoCorasickBuilder::new()
+        .match_kind(parsed_match_kind)
+        .kind(parsed_implementation)
+        .ascii_case_insensitive(ascii_case_insensitive)
+        .build(patterns.iter().map(String::as_bytes))
+        .map_err(|err| Error::Other(err.to_string()))?;
+
+    let automaton = AcAutomaton {
+        patterns_len: patterns.len(),
+        min_pattern_len: ac.min_pattern_len(),
+        max_pattern_len: ac.max_pattern_len(),
+        match_kind: parsed_match_kind,
+        implementation: ac.kind(),
+        ascii_case_insensitive,
+        memory_usage: ac.memory_usage(),
+        ac,
+    };
+
+    Ok(ExternalPtr::new(automaton))
+}
+
+// Return matches with R-style character offsets for UTF-8 strings.
+#[extendr]
+fn rust_ac_locate(
+    ptr: ExternalPtr<AcAutomaton>,
+    x: Vec<String>,
+    text_ids: Vec<i32>,
+    overlapping: bool,
+) -> Result<List> {
+    let automaton = ptr.try_addr()?;
+
+    let mut out_text_id = Vec::new();
+    let mut out_pattern_id = Vec::new();
+    let mut out_start = Vec::new();
+    let mut out_end = Vec::new();
+
+    // Search each haystack independently
+    for (haystack, text_id) in x.iter().zip(text_ids.iter()) {
+        // Build a lookup table to convert byte offsets into UTF-8 character offsets.
+        let offset_map = Utf8OffsetMap::new(haystack);
+
+        if overlapping {
+            let matches = automaton
+                .ac
+                .try_find_overlapping_iter(haystack.as_bytes())
+                .map_err(|err| Error::Other(err.to_string()))?;
+
+            for mat in matches {
+                // Convert byte offsets into the 1-based inclusive character range expected by R.
+                let range = offset_map
+                    .r_char_range(mat.start(), mat.end())
+                    .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
+                out_text_id.push(*text_id);
+                out_pattern_id.push((mat.pattern().as_usize() + 1) as i32);
+                out_start.push(range.start);
+                out_end.push(range.end);
+            }
+        } else {
+            let matches = automaton
+                .ac
+                .try_find_iter(haystack.as_bytes())
+                .map_err(|err| Error::Other(err.to_string()))?;
+
+            for mat in matches {
+                // Convert byte offsets into the 1-based inclusive character range expected by R.
+                let range = offset_map
+                    .r_char_range(mat.start(), mat.end())
+                    .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
+                out_text_id.push(*text_id);
+                out_pattern_id.push((mat.pattern().as_usize() + 1) as i32);
+                out_start.push(range.start);
+                out_end.push(range.end);
+            }
+        }
+    }
+
+    let list = list!(
+        text_id = out_text_id,
+        pattern_id = out_pattern_id,
+        start = out_start,
+        end = out_end
+    );
+
+    Ok(list)
+}
+
+// Return automaton metadata.
+#[extendr]
+fn rust_ac_info(ptr: ExternalPtr<AcAutomaton>) -> Result<List> {
+    let automaton = ptr.try_addr()?;
+
+    let list = list!(
+        patterns_len = automaton.patterns_len,
+        min_pattern_len = automaton.min_pattern_len,
+        max_pattern_len = automaton.max_pattern_len,
+        match_kind = match_kind_name(automaton.match_kind),
+        implementation = implementation_name(automaton.implementation),
+        ascii_case_insensitive = automaton.ascii_case_insensitive,
+        memory_usage = automaton.memory_usage
+    );
+
+    Ok(list)
+}
+
 extendr_module! {
     mod ahocorasick;
-    fn hello_world;
+    fn rust_ac_build;
+    fn rust_ac_locate;
+    fn rust_ac_info;
 }
