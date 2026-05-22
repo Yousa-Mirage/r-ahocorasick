@@ -44,6 +44,56 @@ test_that("ac_locate_df returns one row per match", {
   )
 })
 
+test_that("ac_locate_bytes returns Rust byte offsets", {
+  ac <- ac_build(c("hello", "world"))
+  doc <- c("hello world", NA_character_, "world hello", "nothing")
+
+  hits <- ac_locate_bytes(ac, doc)
+
+  expect_equal(
+    hits,
+    data.frame(
+      doc_id = c(1L, 1L, 3L, 3L),
+      pattern_id = c(1L, 2L, 2L, 1L),
+      byte_start = c(0, 6, 0, 6),
+      byte_end = c(5, 11, 5, 11)
+    )
+  )
+})
+
+test_that("ac_locate_bytes keeps byte offsets for UTF-8 documents", {
+  ac <- ac_build(c("hello", "你a😀", "a😀b"))
+  doc <- c("你好hello世界", "你a😀b")
+
+  hits <- ac_locate_bytes(ac, doc, overlapping = TRUE)
+
+  expect_equal(
+    hits,
+    data.frame(
+      doc_id = c(1L, 2L, 2L),
+      pattern_id = c(1L, 2L, 3L),
+      byte_start = c(6, 0, 3),
+      byte_end = c(11, 8, 9)
+    )
+  )
+})
+
+test_that("ac_locate_bytes can keep missing documents", {
+  ac <- ac_build("hello")
+
+  hits <- ac_locate_bytes(ac, c("hello", NA_character_, "world"), na = "keep")
+
+  expect_equal(
+    hits,
+    data.frame(
+      doc_id = c(1L, 2L),
+      pattern_id = c(1L, NA_integer_),
+      byte_start = c(0, NA_real_),
+      byte_end = c(5, NA_real_)
+    )
+  )
+})
+
 test_that("ac_locate_df can keep missing documents", {
   ac <- ac_build("hello")
   doc <- c("hello", NA_character_, "world")
@@ -73,6 +123,22 @@ test_that("ac_locate_df returns an empty data frame when no patterns match", {
       pattern_id = integer(),
       start = integer(),
       end = integer()
+    )
+  )
+})
+
+test_that("ac_locate_bytes returns an empty data frame when no patterns match", {
+  ac <- ac_build("hello")
+
+  hits <- ac_locate_bytes(ac, c("world", NA_character_))
+
+  expect_equal(
+    hits,
+    data.frame(
+      doc_id = integer(),
+      pattern_id = integer(),
+      byte_start = numeric(),
+      byte_end = numeric()
     )
   )
 })
@@ -208,6 +274,11 @@ test_that("ac_locate errors when overlapping search is incompatible with match_k
     error = TRUE,
     ac_locate_df(ac, "hello", overlapping = TRUE)
   )
+
+  expect_snapshot(
+    error = TRUE,
+    ac_locate_bytes(ac, "hello", overlapping = TRUE)
+  )
 })
 
 test_that("ac_locate errors when missing documents are disallowed", {
@@ -221,5 +292,10 @@ test_that("ac_locate errors when missing documents are disallowed", {
   expect_snapshot(
     error = TRUE,
     ac_locate_df(ac, c("hello", NA_character_), na = "error")
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    ac_locate_bytes(ac, c("hello", NA_character_), na = "error")
   )
 })

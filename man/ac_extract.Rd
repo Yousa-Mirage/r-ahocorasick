@@ -34,8 +34,8 @@ the matched text and the corresponding pattern values.
 \examples{
 if (requireNamespace("tidyverse", quietly = TRUE)) {
   ac <- ac_build(c("hello", "world"))
-  tibble::tibble(doc = c("hello world", "nothing", "world")) |> 
-    dplyr::mutate(extracted = ac_extract(ac, doc)) |> 
+  tibble::tibble(doc = c("hello world", "nothing", "world")) |>
+    dplyr::mutate(extracted = ac_extract(ac, doc)) |>
     tidyr::unnest(extracted)
 }
 }

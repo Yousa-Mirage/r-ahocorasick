@@ -35,11 +35,12 @@ inclusive, so they can be used directly with \code{substr()}.
 \examples{
 if (requireNamespace("tidyverse", quietly = TRUE)) {
   ac <- ac_build(c("hello", "world"))
-  tibble::tibble(doc = c("hello world", "nothing", "world")) |> 
-    dplyr::mutate(hits = ac_locate(ac, doc)) |> 
+  tibble::tibble(doc = c("hello world", "nothing", "world")) |>
+    dplyr::mutate(hits = ac_locate(ac, doc)) |>
     tidyr::unnest(hits)
 }
 }
 \seealso{
-\code{\link[=ac_locate_df]{ac_locate_df()}}, \code{\link[=ac_extract]{ac_extract()}}, \code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_count]{ac_count()}}.
+\code{\link[=ac_locate_df]{ac_locate_df()}}, \code{\link[=ac_locate_bytes]{ac_locate_bytes()}}, \code{\link[=ac_extract]{ac_extract()}},
+\code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_count]{ac_count()}}.
 }

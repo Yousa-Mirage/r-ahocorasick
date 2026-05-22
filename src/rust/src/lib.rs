@@ -185,6 +185,43 @@ fn rust_ac_locate(
     Ok(list)
 }
 
+// Return matches with Rust byte offsets for UTF-8 strings.
+#[extendr]
+fn rust_ac_locate_bytes(
+    ptr: ExternalPtr<AcAutomaton>,
+    doc: Vec<String>,
+    doc_ids: Vec<i32>,
+    overlapping: bool,
+) -> Result<List> {
+    let automaton = ptr.try_addr()?;
+
+    let mut out_doc_id = Vec::new();
+    let mut out_pattern_id = Vec::new();
+    let mut out_byte_start = Vec::new();
+    let mut out_byte_end = Vec::new();
+
+    // Search each haystack independently and keep the crate's byte offsets.
+    for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
+        let raw_matches = collect_raw_matches(&automaton.ac, haystack, overlapping)?;
+
+        for raw_match in raw_matches {
+            out_doc_id.push(*doc_id);
+            out_pattern_id.push(raw_match.pattern_id);
+            out_byte_start.push(raw_match.start_byte);
+            out_byte_end.push(raw_match.end_byte);
+        }
+    }
+
+    let list = list!(
+        doc_id = out_doc_id,
+        pattern_id = out_pattern_id,
+        byte_start = out_byte_start,
+        byte_end = out_byte_end
+    );
+
+    Ok(list)
+}
+
 // Return matched text and pattern ids for each haystack.
 #[extendr]
 fn rust_ac_extract(
@@ -294,6 +331,7 @@ extendr_module! {
     mod ahocorasick;
     fn rust_ac_build;
     fn rust_ac_locate;
+    fn rust_ac_locate_bytes;
     fn rust_ac_extract;
     fn rust_ac_detect;
     fn rust_ac_count;
