@@ -3,6 +3,8 @@
 S3method(length,ac_automaton)
 S3method(print,ac_automaton)
 export(ac_build)
+export(ac_count)
+export(ac_detect)
 export(ac_info)
 export(ac_locate)
 export(ac_patterns)

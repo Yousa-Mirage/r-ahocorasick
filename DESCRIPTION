@@ -10,9 +10,6 @@ Author: Hao Cheng [aut, cre, cph]
 Maintainer: Hao Cheng <Yousa-Mirage@foxmail.com>
 Description: Provides fast multi-pattern string matching for R via the
     Aho-Corasick algorithm, powered by the Rust 'aho-corasick' crate.
-    The package is being designed for reusable precompiled automatons,
-    vectorised searches over character data, and explicit byte- and
-    character-offset match results.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

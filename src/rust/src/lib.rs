@@ -177,6 +177,56 @@ fn rust_ac_locate(
     Ok(list)
 }
 
+// Return whether each haystack has at least one match.
+#[extendr]
+fn rust_ac_detect(ptr: ExternalPtr<AcAutomaton>, doc: Vec<String>) -> Result<Vec<bool>> {
+    let automaton = ptr.try_addr()?;
+    let mut out = Vec::with_capacity(doc.len());
+
+    // Stop after the first match in each haystack.
+    for haystack in &doc {
+        let detected = automaton
+            .ac
+            .try_find(haystack.as_bytes())
+            .map_err(|err| Error::Other(err.to_string()))?
+            .is_some();
+        out.push(detected);
+    }
+
+    Ok(out)
+}
+
+// Return the number of matches in each haystack.
+#[extendr]
+fn rust_ac_count(
+    ptr: ExternalPtr<AcAutomaton>,
+    doc: Vec<String>,
+    overlapping: bool,
+) -> Result<Vec<i32>> {
+    let automaton = ptr.try_addr()?;
+    let mut out = Vec::with_capacity(doc.len());
+
+    for haystack in &doc {
+        let count = if overlapping {
+            let matches = automaton
+                .ac
+                .try_find_overlapping_iter(haystack.as_bytes())
+                .map_err(|err| Error::Other(err.to_string()))?;
+            matches.count()
+        } else {
+            let matches = automaton
+                .ac
+                .try_find_iter(haystack.as_bytes())
+                .map_err(|err| Error::Other(err.to_string()))?;
+            matches.count()
+        };
+
+        out.push(count as i32);
+    }
+
+    Ok(out)
+}
+
 // Return automaton metadata.
 #[extendr]
 fn rust_ac_info(ptr: ExternalPtr<AcAutomaton>) -> Result<List> {
@@ -199,5 +249,7 @@ extendr_module! {
     mod ahocorasick;
     fn rust_ac_build;
     fn rust_ac_locate;
+    fn rust_ac_detect;
+    fn rust_ac_count;
     fn rust_ac_info;
 }
