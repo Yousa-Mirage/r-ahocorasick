@@ -22,5 +22,6 @@ test:
     TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"
     cargo test --quiet --manifest-path src/rust/Cargo.toml
 
-update-wordlist:
-    Rscript -e "spelling::update_wordlist(confirm = FALSE)"
+site:
+    Rscript -e "pkgdown::build_site()"
+    @xdg-open docs/index.html || true

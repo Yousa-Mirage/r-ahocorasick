@@ -8,8 +8,12 @@ Authors@R:
              email = "Yousa-Mirage@foxmail.com"))
 Maintainer: Hao Cheng <Yousa-Mirage@foxmail.com>
 Description: Provides fast multi-pattern string matching for R via the
-    Aho-Corasick algorithm, powered by the Rust 'aho-corasick' crate.
+    Aho-Corasick algorithm, powered by the Rust 'aho-corasick' crate. Build
+    reusable automatons, detect matches, count matches, locate character or
+    byte offsets, and extract matched text from character vectors.
 License: MIT + file LICENSE
+URL: https://yousa-mirage.github.io/r-ahocorasick/
+BugReports: https://github.com/Yousa-Mirage/r-ahocorasick/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
@@ -25,6 +29,7 @@ Imports:
     rlang
 Suggests: 
     dplyr,
+    pkgdown,
     tibble,
     tidyr,
     testthat (>= 3.0.0)

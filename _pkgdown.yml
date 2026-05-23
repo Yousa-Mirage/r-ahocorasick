@@ -1,0 +1,47 @@
+url: https://yousa-mirage.github.io/r-ahocorasick/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#40A2B4"
+    line-height-base: 1.7
+
+toc:
+  depth: 3
+
+authors:
+  Hao Cheng:
+    href: https://github.com/Yousa-Mirage
+    html: Yousa Mirage
+
+home:
+  title: Fast multi-pattern string matching for R
+  description: Fast multi-pattern string matching by Aho-Corasick for R
+  sidebar:
+    structure: [links, license, community, citation, authors, toc, dev]
+
+navbar:
+  structure:
+    left: [intro, reference, news]
+    right: [search, github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/Yousa-Mirage/r-ahocorasick
+      aria-label: GitHub
+
+reference:
+  - title: Build Automatons
+    contents:
+      - ac_build
+      - ac_patterns
+      - ac_info
+  - title: Search in Documents
+    contents:
+      - ac_detect
+      - ac_count
+      - ac_extract
+      - ac_extract_df
+      - ac_locate
+      - ac_locate_df
+      - ac_locate_bytes

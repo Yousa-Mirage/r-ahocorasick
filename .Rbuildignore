@@ -5,6 +5,8 @@
 ^\.vscode$
 ^\.github$
 ^\.gitignore$
+^_pkgdown\.yml$
+^docs$
 ^justfile$
 ^ref$
 ^src/\.cargo$

@@ -36,3 +36,6 @@ coverage/
 .codex/
 .claude/
 AGENTS.md
+
+# Websit build outputs
+docs/
