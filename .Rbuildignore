@@ -6,6 +6,7 @@
 ^\.github$
 ^\.gitignore$
 ^_pkgdown\.yml$
+^pkgdown$
 ^bench$
 ^docs$
 ^justfile$
@@ -16,3 +17,4 @@
 ^src/Makevars$
 ^src/Makevars\.win$
 ^README\.Rmd$
+^cran-comments\.md$
