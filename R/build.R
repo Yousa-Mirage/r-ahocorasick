@@ -13,7 +13,11 @@
 #' @param implementation Rust automaton implementation. `"auto"` lets the
 #'   crate choose.
 #' @param ascii_case_insensitive Use ASCII-only case-insensitive matching. Default is `FALSE`.
-#' @param duplicate How duplicate patterns are handled.
+#' @param duplicate How duplicate patterns are handled:
+#'   * `"keep"` preserves duplicates in their original order.
+#'   * `"error"` fails if `patterns` contains duplicates.
+#'   * `"deduplicate"` keeps the first occurrence of each pattern and drops
+#'     later duplicates.
 #'
 #' @return An immutable `<ac_automaton>` object.
 #' @seealso [ac_locate()], [ac_locate_bytes()], [ac_detect()],

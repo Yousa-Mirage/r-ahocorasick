@@ -29,7 +29,13 @@ crate choose.}
 
 \item{ascii_case_insensitive}{Use ASCII-only case-insensitive matching. Default is \code{FALSE}.}
 
-\item{duplicate}{How duplicate patterns are handled.}
+\item{duplicate}{How duplicate patterns are handled:
+\itemize{
+\item \code{"keep"} preserves duplicates in their original order.
+\item \code{"error"} fails if \code{patterns} contains duplicates.
+\item \code{"deduplicate"} keeps the first occurrence of each pattern and drops
+later duplicates.
+}}
 }
 \value{
 An immutable \verb{<ac_automaton>} object.
