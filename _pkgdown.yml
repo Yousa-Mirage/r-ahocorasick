@@ -22,9 +22,12 @@ home:
 
 navbar:
   structure:
-    left: [intro, reference, news]
+    left: [intro, benchmark, reference, news]
     right: [search, github]
   components:
+    benchmark:
+      text: Benchmark
+      href: articles/benchmarks.html
     github:
       icon: fab fa-github
       href: https://github.com/Yousa-Mirage/r-ahocorasick

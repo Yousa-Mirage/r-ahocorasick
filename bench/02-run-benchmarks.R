@@ -1,0 +1,645 @@
+args <- commandArgs(trailingOnly = FALSE)
+file_arg <- grep("^--file=", args, value = TRUE)
+script_path <- if (length(file_arg) > 0L) {
+  normalizePath(sub("^--file=", "", file_arg[[1]]), mustWork = TRUE)
+} else {
+  normalizePath("bench/02-run-benchmarks.R", mustWork = FALSE)
+}
+
+bench_dir <- dirname(script_path)
+root_dir <- normalizePath(file.path(bench_dir, ".."), mustWork = TRUE)
+output_dir <- file.path(bench_dir, "output")
+input_path <- file.path(output_dir, "benchmark-inputs.rds")
+
+if (!file.exists(input_path)) {
+  stop("Run bench/01-generate-benchmark-data.R first.", call. = FALSE)
+}
+
+Sys.setenv(TZ = "UTC")
+
+required_packages <- c(
+  "AhoCorasickTrie",
+  "bench",
+  "data.table",
+  "dplyr",
+  "pkgload",
+  "polars",
+  "stringi",
+  "stringr",
+  "tibble"
+)
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
+]
+if (length(missing_packages) > 0L) {
+  stop(
+    "Missing benchmark package(s): ",
+    paste(missing_packages, collapse = ", "),
+    call. = FALSE
+  )
+}
+
+suppressPackageStartupMessages(pkgload::load_all(root_dir, quiet = TRUE))
+
+iterations <- as.integer(Sys.getenv("BENCH_ITERATIONS", "5"))
+check_docs_n <- as.integer(Sys.getenv("BENCH_CHECK_DOCS_N", "20"))
+stop_on_mismatch <- tolower(Sys.getenv("BENCH_STOP_ON_MISMATCH", "true")) %in% c("true", "1", "yes")
+
+inputs <- readRDS(input_path)
+documents <- inputs$documents
+pattern_meta <- inputs$pattern_meta
+cases <- inputs$cases
+methods <- c("ahocorasick", "polars", "AhoCorasickTrie", "base_for", "tidyverse_stringr", "data.table")
+tasks <- c("detect", "count", "extract")
+
+get_docs <- function(corpus_id, n = Inf) {
+  docs <- documents$doc[documents$corpus_id == corpus_id]
+  if (is.finite(n)) {
+    docs <- docs[seq_len(min(length(docs), n))]
+  }
+  docs
+}
+
+get_patterns <- function(pattern_set_id) {
+  pattern_meta$pattern[pattern_meta$pattern_set_id == pattern_set_id]
+}
+
+is_ascii <- function(x) {
+  all(!grepl("[^\\x01-\\x7F]", x, perl = TRUE))
+}
+
+supports_method <- function(method, docs, patterns) {
+  if (identical(method, "AhoCorasickTrie") && (!is_ascii(docs) || !is_ascii(patterns))) {
+    return(list(supported = FALSE, reason = "unsupported_ascii_only"))
+  }
+  list(supported = TRUE, reason = NA_character_)
+}
+
+count_gregexpr_one <- function(text, pattern) {
+  hit <- gregexpr(pattern, text, fixed = TRUE, useBytes = FALSE)[[1]]
+  if (identical(hit[[1]], -1L)) {
+    return(0L)
+  }
+  length(hit)
+}
+
+extract_gregexpr_one <- function(text, pattern, doc_id) {
+  hit <- gregexpr(pattern, text, fixed = TRUE, useBytes = FALSE)[[1]]
+  if (identical(hit[[1]], -1L)) {
+    return(NULL)
+  }
+
+  lengths <- attr(hit, "match.length")
+  data.frame(
+    doc_id = rep.int(doc_id, length(hit)),
+    matches = substring(text, hit, hit + lengths - 1L),
+    patterns = rep.int(pattern, length(hit)),
+    stringsAsFactors = FALSE
+  )
+}
+
+empty_extract_df <- function() {
+  data.frame(
+    doc_id = integer(),
+    matches = character(),
+    patterns = character(),
+    stringsAsFactors = FALSE
+  )
+}
+
+bind_extract_rows <- function(rows) {
+  rows <- rows[!vapply(rows, is.null, logical(1))]
+  if (length(rows) == 0L) {
+    return(empty_extract_df())
+  }
+  do.call(rbind, rows)
+}
+
+base_for_detect <- function(docs, patterns) {
+  out <- logical(length(docs))
+  for (i in seq_along(docs)) {
+    for (pattern in patterns) {
+      if (grepl(pattern, docs[[i]], fixed = TRUE, useBytes = FALSE)) {
+        out[[i]] <- TRUE
+        break
+      }
+    }
+  }
+  out
+}
+
+base_for_count <- function(docs, patterns) {
+  out <- integer(length(docs))
+  for (i in seq_along(docs)) {
+    total <- 0L
+    for (pattern in patterns) {
+      total <- total + count_gregexpr_one(docs[[i]], pattern)
+    }
+    out[[i]] <- total
+  }
+  out
+}
+
+base_for_extract <- function(docs, patterns) {
+  rows <- list()
+  index <- 0L
+  for (i in seq_along(docs)) {
+    for (pattern in patterns) {
+      index <- index + 1L
+      rows[[index]] <- extract_gregexpr_one(docs[[i]], pattern, i)
+    }
+  }
+  bind_extract_rows(rows)
+}
+
+extract_counts_long <- function(x, docs_n) {
+  if (nrow(x) == 0L) {
+    return(integer(docs_n))
+  }
+  keep <- !is.na(x$matches)
+  tabulate(x$doc_id[keep], nbins = docs_n)
+}
+
+aho_trie_count <- function(docs, patterns) {
+  names(docs) <- sprintf("doc_%04d", seq_along(docs))
+  matches <- AhoCorasickTrie::AhoCorasickSearchList(patterns, docs)
+  vapply(
+    names(docs),
+    function(doc_id) {
+      if (is.null(matches[[doc_id]])) {
+        return(0L)
+      }
+      length(matches[[doc_id]][[1]])
+    },
+    integer(1)
+  )
+}
+
+aho_trie_extract <- function(docs, patterns) {
+  names(docs) <- sprintf("doc_%04d", seq_along(docs))
+  AhoCorasickTrie::AhoCorasickSearchList(patterns, docs)
+}
+
+aho_trie_extract_counts <- function(x, docs_n) {
+  vapply(
+    sprintf("doc_%04d", seq_len(docs_n)),
+    function(doc_id) {
+      if (is.null(x[[doc_id]])) {
+        return(0L)
+      }
+      length(x[[doc_id]][[1]])
+    },
+    integer(1)
+  )
+}
+
+make_count_expr <- function(pl, patterns) {
+  exprs <- lapply(patterns, function(pattern) {
+    pl$col("doc")$str$count_matches(pattern, literal = TRUE)
+  })
+  Reduce(function(x, y) x + y, exprs)
+}
+
+polars_extract_counts <- function(x) {
+  vapply(x, length, integer(1))
+}
+
+make_backend <- function(method, docs, patterns) {
+  switch(
+    method,
+    ahocorasick = {
+      ac <- ac_build(patterns)
+      list(
+        detect = function() ac_detect(ac, docs, na = "false"),
+        count = function() ac_count(ac, docs, overlapping = TRUE, na = "zero"),
+        extract = function() ac_extract_df(ac, docs, overlapping = TRUE, na = "omit"),
+        extract_counts = function(x) extract_counts_long(x, length(docs)),
+        note = "prebuilt automaton; count/extract use overlapping = TRUE"
+      )
+    },
+    polars = {
+      pl <- getExportedValue("polars", "pl")
+      df <- pl$DataFrame(doc = docs)
+      count_expr <- make_count_expr(pl, patterns)
+      patterns_expr <- list(patterns)
+      list(
+        detect = function() {
+          as.data.frame(df$select(
+            detected = pl$col("doc")$str$contains_any(list(patterns))
+          ))$detected
+        },
+        count = function() {
+          as.integer(as.data.frame(df$select(n_matches = count_expr))$n_matches)
+        },
+        extract = function() {
+          as.data.frame(df$select(
+            matches = pl$col("doc")$str$extract_many(
+              patterns_expr,
+              overlapping = TRUE
+            )
+          ))$matches
+        },
+        extract_counts = polars_extract_counts,
+        note = "contains_any for detect; summed fixed count_matches for count; extract_many with overlapping = TRUE for extract"
+      )
+    },
+    AhoCorasickTrie = {
+      list(
+        detect = function() aho_trie_count(docs, patterns) > 0L,
+        count = function() aho_trie_count(docs, patterns),
+        extract = function() aho_trie_extract(docs, patterns),
+        extract_counts = function(x) aho_trie_extract_counts(x, length(docs)),
+        note = "AhoCorasickTrie rebuilds internally; no separate build API"
+      )
+    },
+    base_for = {
+      list(
+        detect = function() base_for_detect(docs, patterns),
+        count = function() base_for_count(docs, patterns),
+        extract = function() base_for_extract(docs, patterns),
+        extract_counts = function(x) extract_counts_long(x, length(docs)),
+        note = "nested base R fixed-string loop"
+      )
+    },
+    tidyverse_stringr = {
+      tbl <- tibble::tibble(doc = docs)
+      list(
+        detect = function() {
+          hits <- lapply(patterns, function(pattern) {
+            stringr::str_detect(tbl$doc, stringr::fixed(pattern))
+          })
+          dplyr::mutate(tbl, detected = Reduce(`|`, hits))$detected
+        },
+        count = function() {
+          counts <- lapply(patterns, function(pattern) {
+            stringr::str_count(tbl$doc, stringr::fixed(pattern))
+          })
+          as.integer(dplyr::mutate(tbl, n_matches = Reduce(`+`, counts))$n_matches)
+        },
+        extract = function() {
+          rows <- lapply(patterns, function(pattern) {
+            hits <- stringr::str_extract_all(tbl$doc, stringr::fixed(pattern))
+            bind_extract_rows(lapply(seq_along(hits), function(i) {
+              if (length(hits[[i]]) == 0L) {
+                return(NULL)
+              }
+              data.frame(
+                doc_id = rep.int(i, length(hits[[i]])),
+                matches = hits[[i]],
+                patterns = rep.int(pattern, length(hits[[i]])),
+                stringsAsFactors = FALSE
+              )
+            }))
+          })
+          bind_extract_rows(rows)
+        },
+        extract_counts = function(x) extract_counts_long(x, length(docs)),
+        note = "tibble + dplyr + stringr fixed matching"
+      )
+    },
+    data.table = {
+      dt <- data.table::data.table(doc = docs)
+      list(
+        detect = function() {
+          out <- rep(FALSE, nrow(dt))
+          for (pattern in patterns) {
+            out <- out | stringi::stri_detect_fixed(dt$doc, pattern)
+          }
+          out
+        },
+        count = function() {
+          out <- integer(nrow(dt))
+          for (pattern in patterns) {
+            out <- out + stringi::stri_count_fixed(dt$doc, pattern)
+          }
+          out
+        },
+        extract = function() {
+          rows <- lapply(patterns, function(pattern) {
+            hits <- stringi::stri_extract_all_fixed(dt$doc, pattern)
+            bind_extract_rows(lapply(seq_along(hits), function(i) {
+              if (length(hits[[i]]) == 0L || all(is.na(hits[[i]]))) {
+                return(NULL)
+              }
+              data.frame(
+                doc_id = rep.int(i, length(hits[[i]])),
+                matches = hits[[i]],
+                patterns = rep.int(pattern, length(hits[[i]])),
+                stringsAsFactors = FALSE
+              )
+            }))
+          })
+          data.table::as.data.table(bind_extract_rows(rows))
+        },
+        extract_counts = function(x) extract_counts_long(as.data.frame(x), length(docs)),
+        note = "data.table storage with stringi fixed matching"
+      )
+    },
+    stop("Unknown method: ", method, call. = FALSE)
+  )
+}
+
+safe_call <- function(fun) {
+  tryCatch(
+    list(ok = TRUE, value = fun(), error = NA_character_),
+    error = function(cnd) {
+      list(ok = FALSE, value = NULL, error = conditionMessage(cnd))
+    }
+  )
+}
+
+same_logical <- function(x, y) {
+  identical(as.logical(x), as.logical(y))
+}
+
+same_integer <- function(x, y) {
+  identical(as.integer(x), as.integer(y))
+}
+
+correctness_rows <- list()
+row_index <- 0L
+
+for (case_index in seq_len(nrow(cases))) {
+  case <- cases[case_index, ]
+  docs <- get_docs(case$corpus_id, check_docs_n)
+  patterns <- get_patterns(case$pattern_set_id)
+  reference <- make_backend("ahocorasick", docs, patterns)
+  reference_detect <- reference$detect()
+  reference_count <- reference$count()
+  reference_extract <- reference$extract()
+  reference_extract_counts <- reference$extract_counts(reference_extract)
+
+  for (method in methods) {
+    support <- supports_method(method, docs, patterns)
+    row_index <- row_index + 1L
+
+    if (!support$supported) {
+      correctness_rows[[row_index]] <- data.frame(
+        case_id = case$case_id,
+        method = method,
+        supported = FALSE,
+        detect_equal = NA,
+        count_equal = NA,
+        extract_equal = NA,
+        detect_error = NA_character_,
+        count_error = NA_character_,
+        extract_error = NA_character_,
+        note = support$reason,
+        stringsAsFactors = FALSE
+      )
+      next
+    }
+
+    backend <- make_backend(method, docs, patterns)
+    detect_result <- safe_call(backend$detect)
+    count_result <- safe_call(backend$count)
+    extract_result <- safe_call(backend$extract)
+    extract_counts <- if (extract_result$ok) {
+      safe_call(function() backend$extract_counts(extract_result$value))
+    } else {
+      list(ok = FALSE, value = NULL, error = extract_result$error)
+    }
+
+    correctness_rows[[row_index]] <- data.frame(
+      case_id = case$case_id,
+      method = method,
+      supported = TRUE,
+      detect_equal = detect_result$ok && same_logical(detect_result$value, reference_detect),
+      count_equal = count_result$ok && same_integer(count_result$value, reference_count),
+      extract_equal = extract_counts$ok && same_integer(extract_counts$value, reference_extract_counts),
+      detect_error = detect_result$error,
+      count_error = count_result$error,
+      extract_error = extract_counts$error,
+      note = backend$note,
+      stringsAsFactors = FALSE
+    )
+  }
+}
+
+correctness <- do.call(rbind, correctness_rows)
+write.csv(
+  correctness,
+  file.path(output_dir, "correctness.csv"),
+  row.names = FALSE,
+  fileEncoding = "UTF-8"
+)
+
+failed <- correctness$supported &
+  (!(correctness$detect_equal %in% TRUE) |
+    !(correctness$count_equal %in% TRUE) |
+    !(correctness$extract_equal %in% TRUE))
+if (any(failed) && stop_on_mismatch) {
+  stop("Correctness check failed. See bench/output/correctness.csv.", call. = FALSE)
+}
+
+time_expr <- function(fun, iterations) {
+  invisible(fun())
+  gc()
+  result <- bench::mark(
+    fun(),
+    iterations = iterations,
+    check = FALSE,
+    memory = TRUE,
+    time_unit = "s"
+  )
+  data.frame(
+    median_seconds = as.numeric(result$median),
+    min_seconds = as.numeric(result$min),
+    itr_per_sec = as.numeric(result[["itr/sec"]]),
+    mem_alloc_bytes = as.numeric(result$mem_alloc),
+    n_gc = sum(result$n_gc),
+    stringsAsFactors = FALSE
+  )
+}
+
+build_rows <- list()
+query_rows <- list()
+build_index <- 0L
+query_index <- 0L
+
+for (case_index in seq_len(nrow(cases))) {
+  case <- cases[case_index, ]
+  docs <- get_docs(case$corpus_id)
+  patterns <- get_patterns(case$pattern_set_id)
+  input_bytes <- sum(nchar(docs, type = "bytes"))
+
+  for (method in methods) {
+    support <- supports_method(method, docs, patterns)
+
+    build_index <- build_index + 1L
+    if (identical(method, "ahocorasick") && support$supported) {
+      build_stats <- time_expr(function() ac_build(patterns), iterations)
+      build_rows[[build_index]] <- cbind(
+        data.frame(
+          case_id = case$case_id,
+          method = method,
+          status = "ok",
+          docs_n = length(docs),
+          patterns_n = length(patterns),
+          input_bytes = input_bytes,
+          stringsAsFactors = FALSE
+        ),
+        build_stats
+      )
+    } else {
+      build_rows[[build_index]] <- data.frame(
+        case_id = case$case_id,
+        method = method,
+        status = if (support$supported) "not_applicable" else support$reason,
+        docs_n = length(docs),
+        patterns_n = length(patterns),
+        input_bytes = input_bytes,
+        median_seconds = NA_real_,
+        min_seconds = NA_real_,
+        itr_per_sec = NA_real_,
+        mem_alloc_bytes = NA_real_,
+        n_gc = NA_integer_,
+        stringsAsFactors = FALSE
+      )
+    }
+
+    if (!support$supported) {
+      for (task in tasks) {
+        query_index <- query_index + 1L
+        query_rows[[query_index]] <- data.frame(
+          case_id = case$case_id,
+          method = method,
+          task = task,
+          status = support$reason,
+          docs_n = length(docs),
+          patterns_n = length(patterns),
+          input_bytes = input_bytes,
+          median_seconds = NA_real_,
+          min_seconds = NA_real_,
+          itr_per_sec = NA_real_,
+          mem_alloc_bytes = NA_real_,
+          n_gc = NA_integer_,
+          bytes_per_second = NA_real_,
+          note = support$reason,
+          stringsAsFactors = FALSE
+        )
+      }
+      next
+    }
+
+    backend <- make_backend(method, docs, patterns)
+    for (task in tasks) {
+      query_index <- query_index + 1L
+      stats <- time_expr(backend[[task]], iterations)
+      stats$bytes_per_second <- input_bytes / stats$median_seconds
+      query_rows[[query_index]] <- cbind(
+        data.frame(
+          case_id = case$case_id,
+          method = method,
+          task = task,
+          status = "ok",
+          docs_n = length(docs),
+          patterns_n = length(patterns),
+          input_bytes = input_bytes,
+          stringsAsFactors = FALSE
+        ),
+        stats,
+        data.frame(note = backend$note, stringsAsFactors = FALSE)
+      )
+    }
+  }
+}
+
+build_results <- do.call(rbind, build_rows)
+query_results <- do.call(rbind, query_rows)
+
+write.csv(
+  build_results,
+  file.path(output_dir, "build-results.csv"),
+  row.names = FALSE,
+  fileEncoding = "UTF-8"
+)
+write.csv(
+  query_results,
+  file.path(output_dir, "query-results.csv"),
+  row.names = FALSE,
+  fileEncoding = "UTF-8"
+)
+write.csv(
+  query_results[query_results$task == "extract", ],
+  file.path(output_dir, "extract-results.csv"),
+  row.names = FALSE,
+  fileEncoding = "UTF-8"
+)
+
+package_versions <- data.frame(
+  package = c("ahocorasick", required_packages),
+  version = c(
+    as.character(utils::packageVersion("ahocorasick")),
+    vapply(
+      required_packages,
+      function(pkg) {
+        as.character(utils::packageVersion(pkg))
+      },
+      character(1)
+    )
+  ),
+  stringsAsFactors = FALSE
+)
+write.csv(
+  package_versions,
+  file.path(output_dir, "package-versions.csv"),
+  row.names = FALSE,
+  fileEncoding = "UTF-8"
+)
+writeLines(capture.output(utils::sessionInfo()), file.path(output_dir, "session-info.txt"))
+
+fmt_num <- function(x, digits = 2) {
+  ifelse(is.na(x), "NA", formatC(x, digits = digits, format = "f"))
+}
+
+markdown_table <- function(df) {
+  if (nrow(df) == 0L) {
+    return(character())
+  }
+  header <- paste0("| ", paste(names(df), collapse = " | "), " |")
+  rule <- paste0("| ", paste(rep("---", ncol(df)), collapse = " | "), " |")
+  body <- apply(df, 1L, function(row) paste0("| ", paste(row, collapse = " | "), " |"))
+  c(header, rule, body)
+}
+
+summary_query <- query_results[query_results$status == "ok", ]
+summary_query$median_ms <- fmt_num(summary_query$median_seconds * 1000)
+summary_query$mem_mb <- fmt_num(summary_query$mem_alloc_bytes / 1024^2)
+summary_query$mb_per_sec <- fmt_num(summary_query$bytes_per_second / 1024^2)
+summary_query <- summary_query[,
+  c("case_id", "task", "method", "median_ms", "mem_mb", "mb_per_sec", "note")
+]
+
+summary_build <- build_results[build_results$status == "ok", ]
+summary_build$median_ms <- fmt_num(summary_build$median_seconds * 1000)
+summary_build$mem_mb <- fmt_num(summary_build$mem_alloc_bytes / 1024^2)
+summary_build <- summary_build[, c("case_id", "method", "median_ms", "mem_mb")]
+
+summary_lines <- c(
+  "# Benchmark Summary",
+  "",
+  paste0("- Generated at: ", Sys.time()),
+  paste0("- Iterations per expression: ", iterations),
+  paste0("- Documents per corpus: ", inputs$docs_n),
+  paste0("- Chunk size in characters: ", inputs$chunk_chars),
+  "- Count semantics: total fixed-string matches summed per pattern; `ahocorasick` uses `overlapping = TRUE`.",
+  "- Extract semantics: `ahocorasick` uses `ac_extract_df(..., overlapping = TRUE)`; extract correctness compares per-document extracted-match counts.",
+  "- `AhoCorasickTrie` is skipped for non-ASCII cases because it does not support UTF-8 input.",
+  "- `polars` extract uses `extract_many(..., overlapping = TRUE)` and returns a list-column of extracted matches.",
+  "",
+  "## Correctness",
+  "",
+  markdown_table(correctness),
+  "",
+  "## Build Results",
+  "",
+  markdown_table(summary_build),
+  "",
+  "## Query Results",
+  "",
+  markdown_table(summary_query)
+)
+
+writeLines(summary_lines, file.path(output_dir, "summary.md"))
+message("Wrote benchmark results to ", output_dir)

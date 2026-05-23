@@ -309,7 +309,13 @@ ac_info(ac)$implementation
 
 ## Benchmark
 
-TODO
+See the [benchmark
+article](https://yousa-mirage.github.io/r-ahocorasick/articles/benchmarks.html)
+for results on English, Chinese, and mixed-text workloads. In the
+current benchmark, `ahocorasick` is fastest for `detect` and `count`
+across the tested cases. For `extract`, `polars::str$extract_many()` is
+currently faster, while `ahocorasick` still has avoidable R-side result
+materialization overhead in `ac_extract_df()`.
 
 As with any benchmark, real-world results will differ based on your
 particular situation. If performance is important to your application,

@@ -6,6 +6,7 @@
 ^\.github$
 ^\.gitignore$
 ^_pkgdown\.yml$
+^bench$
 ^docs$
 ^justfile$
 ^ref$
