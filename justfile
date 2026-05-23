@@ -17,11 +17,13 @@ clean:
 
 document:
     Rscript -e "devtools::document()"
+    Rscript -e "devtools::build_readme()"
 
 test:
     TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"
     cargo test --quiet --manifest-path src/rust/Cargo.toml
 
 site:
+    Rscript -e "devtools::build_readme()"
     Rscript -e "pkgdown::build_site()"
     @xdg-open docs/index.html || true
