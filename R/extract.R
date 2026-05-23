@@ -61,15 +61,18 @@ ac_extract <- function(
     ))
   }
 
-  # Initialize output with empty matches/patterns
   doc <- enc2utf8(doc)
-  out <- lapply(doc, \(...) empty_extract_result())
+  out <- rep(list(new_extract_result()), length(doc))
+  names(out) <- names(doc)
 
   missing <- is.na(doc)
   if (na == "keep" && any(missing)) {
-    out[missing] <- lapply(
-      out[missing],
-      \(...) missing_extract_result()
+    out[missing] <- rep(
+      list(new_extract_result(
+        matches = NA_character_,
+        patterns = NA_character_
+      )),
+      sum(missing)
     )
   }
 
@@ -86,16 +89,18 @@ ac_extract <- function(
     return(out)
   }
 
-  # Group matches by document and map pattern IDs to values
-  row_ids <- split(seq_along(raw$doc_id), raw$doc_id)
-  res_list <- lapply(row_ids, \(rows) {
-    data.frame(
-      matches = raw$matches[rows],
-      patterns = unname(ac$patterns[raw$pattern_id[rows]])
+  patterns <- unname(ac$patterns[raw$pattern_id])
+  runs <- rle(raw$doc_id)
+  ends <- cumsum(runs$lengths)
+  starts <- ends - runs$lengths + 1L
+
+  for (i in seq_along(starts)) {
+    rows <- seq.int(starts[[i]], ends[[i]])
+    out[[runs$values[[i]]]] <- new_extract_result(
+      raw$matches[rows],
+      patterns[rows]
     )
-  })
-  indices <- as.integer(names(row_ids))
-  out[indices] <- res_list
+  }
 
   out
 }
@@ -193,17 +198,17 @@ ac_extract_df <- function(
   out
 }
 
-empty_extract_result <- function() {
-  data.frame(
-    matches = character(),
-    patterns = character()
-  )
-}
-
-missing_extract_result <- function() {
-  data.frame(
-    matches = NA_character_,
-    patterns = NA_character_
+new_extract_result <- function(
+  matches = character(),
+  patterns = character()
+) {
+  structure(
+    list(
+      matches = matches,
+      patterns = patterns
+    ),
+    class = "data.frame",
+    row.names = .set_row_names(length(matches))
   )
 }
 

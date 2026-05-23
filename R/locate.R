@@ -63,13 +63,18 @@ ac_locate <- function(
   }
 
   doc <- enc2utf8(doc)
-  out <- lapply(doc, \(...) empty_locate_result())
+  out <- rep(list(new_locate_result()), length(doc))
+  names(out) <- names(doc)
 
   missing <- is.na(doc)
   if (na == "keep" && any(missing)) {
-    out[missing] <- lapply(
-      out[missing],
-      \(...) missing_locate_result()
+    out[missing] <- rep(
+      list(new_locate_result(
+        pattern_id = NA_integer_,
+        start = NA_integer_,
+        end = NA_integer_
+      )),
+      sum(missing)
     )
   }
 
@@ -85,15 +90,18 @@ ac_locate <- function(
     return(out)
   }
 
-  row_ids <- split(seq_along(raw$doc_id), raw$doc_id)
-  res_list <- lapply(row_ids, \(rows) {
-    data.frame(
-      pattern_id = raw$pattern_id[rows],
-      start = raw$start[rows],
-      end = raw$end[rows]
+  runs <- rle(raw$doc_id)
+  ends <- cumsum(runs$lengths)
+  starts <- ends - runs$lengths + 1L
+
+  for (i in seq_along(starts)) {
+    rows <- seq.int(starts[[i]], ends[[i]])
+    out[[runs$values[[i]]]] <- new_locate_result(
+      raw$pattern_id[rows],
+      raw$start[rows],
+      raw$end[rows]
     )
-  })
-  out[as.integer(names(row_ids))] <- res_list
+  }
 
   out
 }
@@ -280,19 +288,19 @@ ac_locate_df <- function(
   out
 }
 
-empty_locate_result <- function() {
-  data.frame(
-    pattern_id = integer(),
-    start = integer(),
-    end = integer()
-  )
-}
-
-missing_locate_result <- function() {
-  data.frame(
-    pattern_id = NA_integer_,
-    start = NA_integer_,
-    end = NA_integer_
+new_locate_result <- function(
+  pattern_id = integer(),
+  start = integer(),
+  end = integer()
+) {
+  structure(
+    list(
+      pattern_id = pattern_id,
+      start = start,
+      end = end
+    ),
+    class = "data.frame",
+    row.names = .set_row_names(length(pattern_id))
   )
 }
 
