@@ -46,9 +46,9 @@ print.ac_automaton <- function(x, ...) {
 }
 
 #' @export
-length.ac_automaton <- function(ac) {
-  ac <- validate_ac_automaton(ac)
-  ac$info$patterns_len
+length.ac_automaton <- function(x) {
+  x <- validate_ac_automaton(x)
+  x$info$patterns_len
 }
 
 # Validate that an object is a properly constructed <ac_automaton>.
@@ -58,6 +58,16 @@ validate_ac_automaton <- function(ac) {
   }
   if (is.null(ac$ptr)) {
     cli::cli_abort("{.arg ac} must contain a non-null Rust external pointer.")
+  }
+  valid <- tryCatch(
+    rust_ac_is_valid(ac$ptr),
+    error = function(cnd) FALSE
+  )
+  if (!isTRUE(valid)) {
+    cli::cli_abort(c(
+      "{.arg ac} contains an invalid Rust external pointer.",
+      "i" = "Rebuild it with {.fn ac_build}. External pointers cannot be restored across R sessions."
+    ))
   }
   ac
 }

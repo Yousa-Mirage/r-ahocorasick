@@ -33,7 +33,11 @@ returns one list element per document. Character offsets are 1-based and
 inclusive, so they can be used directly with \code{substr()}.
 }
 \examples{
-if (requireNamespace("tidyverse", quietly = TRUE)) {
+if (
+  requireNamespace("dplyr", quietly = TRUE) &&
+    requireNamespace("tibble", quietly = TRUE) &&
+    requireNamespace("tidyr", quietly = TRUE)
+) {
   ac <- ac_build(c("hello", "world"))
   tibble::tibble(doc = c("hello world", "nothing", "world")) |>
     dplyr::mutate(hits = ac_locate(ac, doc)) |>

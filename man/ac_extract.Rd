@@ -32,7 +32,11 @@ with one row per match and two columns:
 the matched text and the corresponding pattern values.
 }
 \examples{
-if (requireNamespace("tidyverse", quietly = TRUE)) {
+if (
+  requireNamespace("dplyr", quietly = TRUE) &&
+    requireNamespace("tibble", quietly = TRUE) &&
+    requireNamespace("tidyr", quietly = TRUE)
+) {
   ac <- ac_build(c("hello", "world"))
   tibble::tibble(doc = c("hello world", "nothing", "world")) |>
     dplyr::mutate(extracted = ac_extract(ac, doc)) |>

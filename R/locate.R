@@ -21,7 +21,11 @@
 #'   [ac_detect()], [ac_count()].
 #'
 #' @examples
-#' if (requireNamespace("tidyverse", quietly = TRUE)) {
+#' if (
+#'   requireNamespace("dplyr", quietly = TRUE) &&
+#'     requireNamespace("tibble", quietly = TRUE) &&
+#'     requireNamespace("tidyr", quietly = TRUE)
+#' ) {
 #'   ac <- ac_build(c("hello", "world"))
 #'   tibble::tibble(doc = c("hello world", "nothing", "world")) |>
 #'     dplyr::mutate(hits = ac_locate(ac, doc)) |>

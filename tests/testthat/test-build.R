@@ -38,3 +38,15 @@ test_that("ac_build errors on invalid pattern vectors", {
     ac_build(c("hello", ""))
   )
 })
+
+test_that("ac_automaton validation catches invalid external pointers", {
+  ac <- structure(
+    list(ptr = new("externalptr")),
+    class = "ac_automaton"
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    ac_info(ac)
+  )
+})

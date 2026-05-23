@@ -15,3 +15,12 @@
       Error in `ac_build()`:
       ! `patterns` must be a character vector of non-empty strings with no missing values.
 
+# ac_automaton validation catches invalid external pointers
+
+    Code
+      ac_info(ac)
+    Condition
+      Error in `validate_ac_automaton()`:
+      ! `ac` contains an invalid Rust external pointer.
+      i Rebuild it with `ac_build()`. External pointers cannot be restored across R sessions.
+

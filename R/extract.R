@@ -19,7 +19,11 @@
 #' @seealso [ac_extract_df()], [ac_locate()], [ac_detect()], [ac_count()].
 #'
 #' @examples
-#' if (requireNamespace("tidyverse", quietly = TRUE)) {
+#' if (
+#'   requireNamespace("dplyr", quietly = TRUE) &&
+#'     requireNamespace("tibble", quietly = TRUE) &&
+#'     requireNamespace("tidyr", quietly = TRUE)
+#' ) {
 #'   ac <- ac_build(c("hello", "world"))
 #'   tibble::tibble(doc = c("hello world", "nothing", "world")) |>
 #'     dplyr::mutate(extracted = ac_extract(ac, doc)) |>

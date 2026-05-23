@@ -19,4 +19,6 @@ rust_ac_count <- function(ptr, doc, overlapping) .Call(wrap__rust_ac_count, ptr,
 
 rust_ac_info <- function(ptr) .Call(wrap__rust_ac_info, ptr)
 
+rust_ac_is_valid <- function(ptr) .Call(wrap__rust_ac_is_valid, ptr)
+
 # nolint end

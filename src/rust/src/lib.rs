@@ -135,6 +135,12 @@ fn rust_ac_build(
     Ok(ExternalPtr::new(automaton))
 }
 
+// Return whether an external pointer still points to a live Rust automaton.
+#[extendr]
+fn rust_ac_is_valid(ptr: ExternalPtr<AcAutomaton>) -> bool {
+    ptr.try_addr().is_ok()
+}
+
 // Return matches with R-style character offsets for UTF-8 strings.
 #[extendr]
 fn rust_ac_locate(
@@ -336,4 +342,5 @@ extendr_module! {
     fn rust_ac_detect;
     fn rust_ac_count;
     fn rust_ac_info;
+    fn rust_ac_is_valid;
 }
