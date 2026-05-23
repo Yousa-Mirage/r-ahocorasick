@@ -25,5 +25,6 @@ unwrap_used = "deny"
 expect_used = "deny"
 
 [profile.release]
-lto = true
+lto = "fat"
 codegen-units = 1
+panic = "unwind"

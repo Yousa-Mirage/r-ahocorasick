@@ -40,7 +40,7 @@ if (length(missing_packages) > 0L) {
   )
 }
 
-suppressPackageStartupMessages(pkgload::load_all(root_dir, quiet = TRUE))
+suppressPackageStartupMessages(pkgload::load_all(root_dir, quiet = TRUE, debug = FALSE, compile = TRUE))
 
 iterations <- as.integer(Sys.getenv("BENCH_ITERATIONS", "5"))
 check_docs_n <- as.integer(Sys.getenv("BENCH_CHECK_DOCS_N", "20"))
