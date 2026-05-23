@@ -157,6 +157,7 @@ fn rust_ac_locate(
     let mut out_end = Vec::new();
 
     // Search each haystack independently.
+    // TODO: Is this able to be parallelized?
     for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
         // Store byte offsets first so conversion can be batched for this haystack.
         let raw_matches = collect_raw_matches(&automaton.ac, haystack, overlapping)?;
@@ -243,6 +244,7 @@ fn rust_ac_extract(
     let mut out_matches = Vec::new();
 
     // Search each haystack independently.
+    // TODO: Is this able to be parallelized?
     for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
         let raw_matches = collect_raw_matches(&automaton.ac, haystack, overlapping)?;
 
