@@ -25,7 +25,9 @@ uses long English and Chinese novels as input, then compares three tasks:
 - `extract`: materialize the extracted matches.
 
 The benchmark compares `ahocorasick` with `polars`, `AhoCorasickTrie`, a basic
-base R `for` loop, `tidyverse` + `stringr`, and `data.table`.
+base R `for` loop, `tidyverse` + `stringr`, and `data.table`. Note that
+`AhoCorasickTrie` is ASCII-only, so it is skipped for Chinese and mixed UTF-8
+cases.
 
 ## Reproducing
 
@@ -57,14 +59,8 @@ and *The Count of Monte Cristo*. The Chinese corpus is built from `红楼梦`,
 ## Semantics
 
 The benchmark uses fixed-string matching semantics. `ahocorasick` uses a
-prebuilt automaton in every timed query. `count` and `extract` use overlapping
+pre-built automaton in every timed query. `count` and `extract` use overlapping
 matches.
-
-`AhoCorasickTrie` is ASCII-only, so it is skipped for Chinese and mixed UTF-8
-cases. `polars` participates in all three tasks. For `extract`, it uses
-`extract_many(..., overlapping = TRUE)` and returns a list-column of matches.
-`ahocorasick` returns a long data frame through `ac_extract_df()`, so the
-`extract` timings include different result materialization costs.
 
 The correctness gate checks all supported `detect` and `count` results against
 `ahocorasick`. For `extract`, it checks extracted-match counts per document. All
@@ -77,10 +73,10 @@ for all tested pattern sets.
 
   | Case              | Build median ms |
   | ----------------- | --------------- |
-  | `en_small_common` | 0.24            |
-  | `en_large_rare`   | 0.32            |
-  | `zh_small_common` | 0.27            |
-  | `mix_medium`      | 0.39            |
+  | `en_small_common` | 0.22            |
+  | `en_large_rare`   | 0.39            |
+  | `zh_small_common` | 0.24            |
+  | `mix_medium`      | 0.30            |
 
 ## Detect
 
@@ -93,10 +89,10 @@ Median time in milliseconds:
 
   | Case              | `ahocorasick` | `polars` | `AhoCorasickTrie` | base `for` | `tidyverse` | `data.table` |
   | ----------------- | ------------- | -------- | ----------------- | ---------- | ----------- | ------------ |
-  | `en_small_common` | 0.17          | 2.21     | 20.04             | 0.21       | 2.30        | 1.05         |
-  | `en_large_rare`   | 0.71          | 2.76     | 5.34              | 21.34      | 25.88       | 18.58        |
-  | `zh_small_common` | 0.29          | 2.02     | skipped           | 1.85       | 4.84        | 3.40         |
-  | `mix_medium`      | 0.21          | 1.95     | skipped           | 1.27       | 6.10        | 4.21         |
+  | `en_small_common` | 0.16          | 1.83     | 22.42             | 0.21       | 2.54        | 1.08         |
+  | `en_large_rare`   | 0.80          | 2.61     | 5.84              | 21.59      | 25.35       | 19.29        |
+  | `zh_small_common` | 0.36          | 1.94     | skipped           | 1.91       | 4.94        | 3.55         |
+  | `mix_medium`      | 0.25          | 2.05     | skipped           | 1.18       | 6.34        | 4.34         |
 
 ## Count
 
@@ -109,69 +105,32 @@ Median time in milliseconds:
 
   | Case              | `ahocorasick` | `polars` | `AhoCorasickTrie` | base `for` | `tidyverse` | `data.table` |
   | ----------------- | ------------- | -------- | ----------------- | ---------- | ----------- | ------------ |
-  | `en_small_common` | 2.30          | 27.79    | 21.20             | 20.97      | 6.07        | 4.44         |
-  | `en_large_rare`   | 1.96          | 222.25   | 5.64              | 156.14     | 24.54       | 18.96        |
-  | `zh_small_common` | 4.74          | 36.33    | skipped           | 81.88      | 12.87       | 9.99         |
-  | `mix_medium`      | 3.63          | 57.07    | skipped           | 107.27     | 11.72       | 10.15        |
+  | `en_small_common` | 2.49          | 27.77    | 21.51             | 22.99      | 5.95        | 4.58         |
+  | `en_large_rare`   | 2.04          | 223.34   | 5.53              | 169.39     | 25.44       | 18.69        |
+  | `zh_small_common` | 5.84          | 37.11    | skipped           | 81.88      | 12.47       | 10.67        |
+  | `mix_medium`      | 3.41          | 55.26    | skipped           | 109.44     | 12.91       | 9.43         |
 
 ## Extract
 
 `extract` measures the cost of materializing match results, not just searching.
-Here `polars` is the fastest method in all four cases. It returns a list-column
-of extracted matches directly from its Aho-Corasick path. `ahocorasick` remains
-much faster than the R-level fixed-string baselines, but its current public
-`ac_extract_df()` path pays a noticeable R-side reshaping cost.
+`ahocorasick::ac_extract_df()` is the fastest method in all four cases. It
+returns a long data frame directly from the Rust output, avoiding the overhead
+in R.
 
 Median time in milliseconds:
 
   | Case              | `ahocorasick` | `polars` | `AhoCorasickTrie` | base `for` | `tidyverse` | `data.table` |
   | ----------------- | ------------- | -------- | ----------------- | ---------- | ----------- | ------------ |
-  | `en_small_common` | 58.68         | 9.11     | 26.14             | 840.24     | 731.86      | 733.70       |
-  | `en_large_rare`   | 40.46         | 3.89     | 5.47              | 274.58     | 146.85      | 149.62       |
-  | `zh_small_common` | 51.10         | 8.60     | skipped           | 989.10     | 550.37      | 545.13       |
-  | `mix_medium`      | 53.48         | 8.94     | skipped           | 1586.91    | 1106.22     | 1062.91      |
+  | `en_small_common` | 7.30          | 9.92     | 21.54             | 930.72     | 790.93      | 790.69       |
+  | `en_large_rare`   | 2.33          | 4.11     | 5.13              | 302.23     | 147.84      | 151.74       |
+  | `zh_small_common` | 7.61          | 9.33     | skipped           | 1072.92    | 569.07      | 608.51       |
+  | `mix_medium`      | 7.01          | 9.05     | skipped           | 1675.84    | 1143.16     | 1172.35      |
 
-## Why `polars` Can Win On Extract
-
-The `extract` result does not mean that `ahocorasick` is generally slower at
-searching. The main difference is in the public result shape and how much work
-happens on the R side after the underlying matcher finishes.
-
-There are several important differences:
-
-- `polars` and `ahocorasick` both sit on top of Rust implementations, but
-  `polars` returns a native list-column of matches while `ahocorasick` returns a
-  long data frame through `ac_extract_df()`.
-- `AhoCorasickTrie` is specialized for ASCII input. It does not support UTF-8
-  matching, so it cannot cover the Chinese and mixed workloads.
-- It builds and searches inside one C++ call. The benchmark cannot separate its
-  build cost from query cost, but it also avoids a reusable R-side automaton
-  object.
-- Its extract result is a nested list of keywords and offsets. `ac_extract_df()`
-  returns a long data frame with `doc_id`, matched text, and pattern values.
-- The current `ac_extract_df()` implementation calls `ac_extract()` first,
-  creates per-document data frames, and then flattens them. That R-side
-  reshaping is expensive when many matches are returned.
-
-A diagnostic local check supports this interpretation. On `en_large_rare`, the
-internal Rust extraction call took about 2 ms, while public `ac_extract_df()`
-took about 42 ms. On `en_small_common`, the internal call took about 6 ms,
-while `ac_extract_df()` took about 67 ms. In the full benchmark, `polars`
-extract landed at about 4 ms on `en_large_rare` and about 9 ms on
-`en_small_common`, which is much closer to the raw matcher cost. The search
-itself is fast; the public result construction is the current bottleneck.
-
-This points to a clear optimization target: implement a direct data-frame path
-for `ac_extract_df()` that avoids constructing the intermediate list of
-per-document data frames.
-
-## Takeaways
+## Summary
 
 Use `ahocorasick` when you need fast reusable multi-pattern matching over R
 character vectors, especially with UTF-8 text. In this run it is consistently
-fastest for `detect` and `count`.
+fastest for `detect`, `count`, and `extract`.
 
-For `extract`, `polars` is currently the fastest option in this benchmark if a
-list-column result fits your workflow. `ahocorasick` is still much faster than
-the R-level fixed-string baselines, but `ac_extract_df()` has avoidable R-side
-materialization overhead.
+Use `polars` if your data is already in a DataFrame and you want to both keep in
+the DataFrame workflow and have good performance. Try it!

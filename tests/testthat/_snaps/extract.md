@@ -12,7 +12,7 @@
     Code
       ac_extract_df(ac, "hello", overlapping = TRUE)
     Condition
-      Error in `ac_extract()`:
+      Error in `ac_extract_df()`:
       ! `overlapping = TRUE` requires `match_kind = "standard"`.
       i Rebuild the automaton with `match_kind = "standard"` to enable overlapping search.
 

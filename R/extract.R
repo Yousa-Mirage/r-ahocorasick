@@ -129,9 +129,20 @@ ac_extract_df <- function(
   overlapping = FALSE,
   na = c("omit", "keep", "error")
 ) {
+  ac <- validate_ac_automaton(ac)
+
   na <- rlang::arg_match(na)
   if (!checkmate::test_character(doc)) {
     cli::cli_abort("{.arg doc} must be a character vector.")
+  }
+  if (!checkmate::test_flag(overlapping)) {
+    cli::cli_abort("{.arg overlapping} must be a logical value.")
+  }
+  if (overlapping && ac$info$match_kind != "standard") {
+    cli::cli_abort(c(
+      "{.code overlapping = TRUE} requires {.code match_kind = \"standard\"}.",
+      "i" = "Rebuild the automaton with {.code match_kind = \"standard\"} to enable overlapping search."
+    ))
   }
   if (na == "error" && anyNA(doc)) {
     cli::cli_abort(c(
@@ -140,30 +151,46 @@ ac_extract_df <- function(
     ))
   }
 
-  hits <- ac_extract(
-    ac,
-    doc,
-    overlapping = overlapping,
-    na = ifelse(na == "omit", "empty", na)
-  )
-  extract_list_to_df(hits)
-}
+  doc <- enc2utf8(doc)
+  missing <- is.na(doc)
+  keep <- !missing
 
-extract_list_to_df <- function(hits) {
-  rows <- lapply(seq_along(hits), \(doc_id) {
-    hit <- hits[[doc_id]]
-    n <- nrow(hit)
-    if (n == 0L) {
-      return(NULL)
-    }
-
-    data.frame(
-      doc_id = rep.int(doc_id, n),
-      hit
+  out <- if (any(keep)) {
+    raw <- rust_ac_extract(
+      ac$ptr,
+      doc[keep],
+      as.integer(which(keep)),
+      overlapping
     )
-  })
 
-  compact_rows(rows, empty_extract_df)
+    if (length(raw$doc_id) == 0L) {
+      empty_extract_df()
+    } else {
+      data.frame(
+        doc_id = raw$doc_id,
+        matches = raw$matches,
+        patterns = unname(ac$patterns[raw$pattern_id])
+      )
+    }
+  } else {
+    empty_extract_df()
+  }
+
+  if (na == "keep" && any(missing)) {
+    missing_rows <- data.frame(
+      doc_id = as.integer(which(missing)),
+      matches = NA_character_,
+      patterns = NA_character_
+    )
+    out <- compact_rows(
+      list(out, missing_rows),
+      empty_extract_df
+    )
+    out <- out[order(out$doc_id), , drop = FALSE]
+    row.names(out) <- NULL
+  }
+
+  out
 }
 
 empty_extract_result <- function() {

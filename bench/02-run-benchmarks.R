@@ -65,7 +65,7 @@ get_patterns <- function(pattern_set_id) {
 }
 
 is_ascii <- function(x) {
-  all(!grepl("[^\\x01-\\x7F]", x, perl = TRUE))
+  !any(grepl("[^\\x01-\\x7F]", x, perl = TRUE))
 }
 
 supports_method <- function(method, docs, patterns) {
@@ -201,7 +201,7 @@ make_count_expr <- function(pl, patterns) {
 }
 
 polars_extract_counts <- function(x) {
-  vapply(x, length, integer(1))
+  lengths(x)
 }
 
 make_backend <- function(method, docs, patterns) {
@@ -214,7 +214,7 @@ make_backend <- function(method, docs, patterns) {
         count = function() ac_count(ac, docs, overlapping = TRUE, na = "zero"),
         extract = function() ac_extract_df(ac, docs, overlapping = TRUE, na = "omit"),
         extract_counts = function(x) extract_counts_long(x, length(docs)),
-        note = "prebuilt automaton; count/extract use overlapping = TRUE"
+        note = "pre-built automaton; count/extract use overlapping = TRUE"
       )
     },
     polars = {

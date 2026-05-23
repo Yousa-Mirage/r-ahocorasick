@@ -312,10 +312,9 @@ ac_info(ac)$implementation
 See the [benchmark
 article](https://yousa-mirage.github.io/r-ahocorasick/articles/benchmarks.html)
 for results on English, Chinese, and mixed-text workloads. In the
-current benchmark, `ahocorasick` is fastest for `detect` and `count`
-across the tested cases. For `extract`, `polars::str$extract_many()` is
-currently faster, while `ahocorasick` still has avoidable R-side result
-materialization overhead in `ac_extract_df()`.
+current benchmark, `ahocorasick` is **fastest** for `detect` and `count`
+across the tested cases. The `ac_extract_df()` is also the **fastest**
+for `extract` while preserving a tidy long data-frame result.
 
 As with any benchmark, real-world results will differ based on your
 particular situation. If performance is important to your application,
@@ -342,7 +341,7 @@ than in Python. These are what I found:
 It’s great to see that Rust is providing more and more modern, safe,
 high-performance open source tools for R (and also for Python) :)
 
-## Acknowledgements
+## Acknowledgments
 
 Inspired by the Python package
 [`ahocorasick_rs`](https://github.com/G-Research/ahocorasick_rs). Thanks
