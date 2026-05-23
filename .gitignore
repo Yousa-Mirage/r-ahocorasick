@@ -34,7 +34,5 @@ coverage/
 
 # Agents
 .codex/
-Agent.md
-src/rust/vendor
-src/Makevars
-src/Makevars.win
+.claude/
+AGENTS.md
