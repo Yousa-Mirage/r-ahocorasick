@@ -1,4 +1,6 @@
-# ahocorasick 0.0.0.9000
+# ahocorasick 0.1.0
+
+Initial CRAN submission.
 
 Implemented these APIs:
 

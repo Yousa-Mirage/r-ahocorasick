@@ -35,7 +35,14 @@ analysis.
 
 ## Installation
 
-Install from source. You need Cargo and `rustc` on `PATH`.
+Install the released version from CRAN:
+
+``` r
+install.packages("ahocorasick")
+```
+
+Install the development version from source. You need Cargo and `rustc`
+on `PATH`.
 
 ``` r
 # install.packages("pak")
