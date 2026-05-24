@@ -53,15 +53,13 @@ owns the compiled matcher and the core search work.
 ## Repository layout
 
 - `R/`: public R API and output-shaping helpers
-- `src/rust/src/`: Rust FFI entrypoints and matcher implementation
+- `src/rust/`: Rust FFI entrypoints and matcher implementation
 - `src/rust/document.rs`: helper binary that regenerates
   `R/extendr-wrappers.R`
-- `src/`: C entrypoint plus generated `extendr` glue
 - `tests/testthat/`: R tests and snapshots
 - `vignettes/`: pkgdown articles
 - `bench/`: benchmark scripts, data generation, and plans
 - `tools/`: build-time helper scripts
-- `.github/workflows/`: CI for checks and pkgdown
 
 ## Architecture overview
 
@@ -86,7 +84,7 @@ Important R files include:
 - `extract.R`: extraction APIs
 - `replace.R`: replacement API
 - `extendr-wrappers.R`: generated `.Call()` wrappers for Rust
-  entrypoints; do not edit by hand
+  entrypoints; **do not edit by hand**
 
 ### Rust layer
 
@@ -137,14 +135,6 @@ The repository uses `just` as the main command runner:
 - `just pkg-check`: run `devtools::check(remote = TRUE, manual = TRUE)`
 - `just site`: rebuild `README.md` and the pkgdown site
 
-Useful direct commands while iterating:
-
-- `Rscript -e "devtools::load_all('.')"`
-- `Rscript -e "devtools::test(filter = 'replace')"`
-- `Rscript -e "devtools::document()"`
-- `Rscript -e "pkgdown::build_site()"`
-- `cargo test --manifest-path src/rust/Cargo.toml`
-
 ## Rust-specific notes
 
 - The package ships vendored Rust dependencies in
@@ -165,7 +155,7 @@ Before submitting a PR, make sure that:
 3.  You keep commits focused on one logical change
 
 If your change touches build or installation behavior, it is worth
-checking `R CMD build .` and `R CMD check` locally as well.
+checking `just pkg-check` locally as well.
 
 Please follow [Conventional
 Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit
