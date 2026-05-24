@@ -13,7 +13,7 @@ Description: Provides fast multi-pattern string matching for R via the
     byte offsets, extract matched text, and replace matches in character
     vectors.
 License: MIT + file LICENSE
-URL: https://yousa-mirage.github.io/r-ahocorasick/
+URL: https://yousa-mirage.github.io/r-ahocorasick/, https://github.com/Yousa-Mirage/r-ahocorasick
 BugReports: https://github.com/Yousa-Mirage/r-ahocorasick/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
