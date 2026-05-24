@@ -1,0 +1,184 @@
+
+# Contributing to `ahocorasick`
+
+Thanks for your interest in contributing to `ahocorasick`.
+
+`ahocorasick` is an R package with a Rust backend built on the
+[`aho-corasick`](https://docs.rs/aho-corasick/latest/aho_corasick/)
+crate. The package exposes reusable automatons and high-level R helpers
+for multi-pattern string matching, including detection, counting,
+locating, extraction, and replacement. Most changes touch both the R
+layer and the Rust/FFI layer, so a good contribution usually starts with
+understanding how those pieces fit together.
+
+## Development setup
+
+You will need:
+
+- R \>= 4.2
+- Rust \>= 1.65 with `cargo` and `rustc`
+- [`Air`](https://posit-dev.github.io/air/) for formatting R code and
+  [`Jarl`](https://jarl.etiennebacher.com/) for checking R code
+- Recommended development packages such as `devtools`, `testthat`,
+  `pkgdown`, and `rmarkdown`
+- Optional: [`just`](https://github.com/casey/just) to run the project
+  command shortcuts
+
+Install package dependencies in your usual R environment, then use the
+project root as your working directory.
+
+## Build model
+
+`ahocorasick` is not a pure R package. The package builds a Rust
+`staticlib` under `src/rust/`, then links that library into the R
+package through [`extendr`](https://extendr.rs/).
+
+At a high level, the pipeline is:
+
+1.  R user-facing functions validate arguments and normalize them into
+    the types expected by the Rust backend.
+2.  `ac_build()` compiles a set of patterns into an
+    external-pointer-backed automaton object.
+3.  `extendr` forwards search requests into Rust.
+4.  Rust executes matching with the `aho-corasick` crate and returns
+    compact vectors back to R.
+5.  R turns those vectors into the final public API shapes, such as
+    logical or integer vectors, long data frames, or list-of-data-frame
+    outputs.
+
+That split is the key architectural idea of the package: R owns
+user-facing API design, missing-value behavior, and output shapes; Rust
+owns the compiled matcher and the core search work.
+
+## Repository layout
+
+- `R/`: public R API and output-shaping helpers
+- `src/rust/src/`: Rust FFI entrypoints and matcher implementation
+- `src/rust/document.rs`: helper binary that regenerates
+  `R/extendr-wrappers.R`
+- `src/`: C entrypoint plus generated `extendr` glue
+- `tests/testthat/`: R tests and snapshots
+- `vignettes/`: pkgdown articles
+- `bench/`: benchmark scripts, data generation, and plans
+- `tools/`: build-time helper scripts
+- `.github/workflows/`: CI for checks and pkgdown
+
+## Architecture overview
+
+### R layer
+
+The R API is organized around a compiled automaton plus task-specific
+helpers:
+
+- `ac_build()`, `ac_patterns()`, `ac_info()` create and inspect
+  automatons
+- `ac_detect()` and `ac_count()` return vectorized match summaries
+- `ac_locate()`, `ac_locate_df()`, and `ac_locate_bytes()` return match
+  positions
+- `ac_extract()` and `ac_extract_df()` return matched text
+- `ac_replace()` performs literal multi-pattern replacement
+
+Important R files include:
+
+- `build.R`: automaton construction and validation
+- `detect-count.R`: detection and counting wrappers
+- `locate.R`: locating APIs, including byte-offset accessors
+- `extract.R`: extraction APIs
+- `replace.R`: replacement API
+- `extendr-wrappers.R`: generated `.Call()` wrappers for Rust
+  entrypoints; do not edit by hand
+
+### Rust layer
+
+The Rust crate lives in `src/rust/` and exports the low-level FFI
+entrypoints used by the R package. The exported functions include:
+
+- `rust_ac_build()`
+- `rust_ac_detect()`
+- `rust_ac_count()`
+- `rust_ac_locate()`
+- `rust_ac_locate_bytes()`
+- `rust_ac_extract()`
+- `rust_ac_replace()`
+
+The Rust side owns:
+
+- compiling the automaton
+- pointer validation and lifecycle checks
+- performing the actual search or replacement work
+- returning flat vectors that R reshapes into public outputs
+
+One important design choice is that `ac_locate_bytes()` preserves Rust
+byte offset semantics directly. Do not silently convert those offsets to
+R character positions.
+
+## Auto-generated files
+
+Do not hand-edit these generated files. Edit their sources and
+regenerate them.
+
+- `README.md`
+- `.github/CONTRIBUTING.md`
+- `NAMESPACE`
+- `man/*.Rd`
+- `R/extendr-wrappers.R`
+
+## Core development commands
+
+The repository uses `just` as the main command runner:
+
+- `just format` / `just fmt`: run `r-air format .` and `cargo fmt`
+- `just check`: run `jarl check .`, `devtools::spell_check()`, and
+  `cargo clippy`
+- `just document` / `just doc`: regenerate `R/extendr-wrappers.R`,
+  `NAMESPACE`, Rd files, and `README.md`
+- `just test`: run R tests and Rust tests
+- `just build`: run `devtools::build()`
+- `just pkg-check`: run `devtools::check(remote = TRUE, manual = TRUE)`
+- `just site`: rebuild `README.md` and the pkgdown site
+
+Useful direct commands while iterating:
+
+- `Rscript -e "devtools::load_all('.')"`
+- `Rscript -e "devtools::test(filter = 'replace')"`
+- `Rscript -e "devtools::document()"`
+- `Rscript -e "pkgdown::build_site()"`
+- `cargo test --manifest-path src/rust/Cargo.toml`
+
+## Rust-specific notes
+
+- The package ships vendored Rust dependencies in
+  `src/rust/vendor.tar.xz` for offline CRAN builds.
+- Installing the package builds the Rust static library, but it should
+  not run the wrapper-generation helper binary during installation.
+- If you add, remove, or rename `#[extendr]` exports in Rust, run
+  `just document` so `R/extendr-wrappers.R` stays in sync.
+
+## Submitting changes
+
+Before submitting a PR, make sure that:
+
+1.  You run `just format`, `just check`, `just document`, and
+    `just test`
+2.  You run `just site` if README, vignettes, or pkgdown-related files
+    changed
+3.  You keep commits focused on one logical change
+
+If your change touches build or installation behavior, it is worth
+checking `R CMD build .` and `R CMD check` locally as well.
+
+Please follow [Conventional
+Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit
+messages and PR titles. For example:
+
+- `feat`: a new feature
+- `fix`: a bug fix
+- `docs`: documentation-only changes
+- `test`: new or corrected tests
+- `chore`: build, tooling, or auxiliary changes
+- `refactor`: internal restructuring without behavior changes
+
+If you are unsure how to begin, opening an issue or draft PR with your
+proposed approach is a good starting point, especially for changes that
+affect public API semantics, Rust/R interface boundaries, or matching
+behavior.

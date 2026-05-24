@@ -5,12 +5,19 @@
 
 <div align="center">
 
+<!-- badges: start -->
+
+[![R-universe
+Version](https://yousa-mirage.r-universe.dev/ahocorasick/badges/version)](https://yousa-mirage.r-universe.dev/ahocorasick)
 [![GitHub
-stars](https://img.shields.io/github/stars/Yousa-Mirage/r-ahocorasick?style=social)](https://github.com/Yousa-Mirage/r-ahocorasick/stargazers)
+Stars](https://img.shields.io/github/stars/Yousa-Mirage/r-ahocorasick?style=social)](https://github.com/Yousa-Mirage/r-ahocorasick/stargazers)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docs Dev
+Version](https://img.shields.io/badge/docs-dev-blue.svg)](https://yousa-mirage.github.io/r-ahocorasick/)
 [![Ask
 DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yousa-Mirage/r-ahocorasick)
+<!-- badges: end -->
 
 </div>
 
@@ -39,6 +46,12 @@ Install the released version from CRAN:
 
 ``` r
 install.packages("ahocorasick")
+```
+
+Install the released version from r-universe:
+
+``` r
+install.packages("ahocorasick", repos = "https://yousa-mirage.r-universe.dev")
 ```
 
 Install the development version from source. You need Cargo and `rustc`

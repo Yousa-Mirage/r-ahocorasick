@@ -19,6 +19,7 @@ document:
     cd src && cargo run --quiet --manifest-path rust/Cargo.toml --bin document
     Rscript -e "devtools::document()"
     Rscript -e "devtools::build_readme()"
+    Rscript -e "rmarkdown::render('.github/CONTRIBUTING.Rmd')"
 
 test:
     TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"
@@ -26,6 +27,7 @@ test:
 
 site:
     Rscript -e "devtools::build_readme()"
+    Rscript -e "rmarkdown::render('.github/CONTRIBUTING.Rmd')"
     Rscript -e "pkgdown::build_site()"
     @xdg-open docs/index.html || true
 
