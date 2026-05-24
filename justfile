@@ -16,6 +16,7 @@ clean:
     cargo clean --manifest-path src/rust/Cargo.toml
 
 document:
+    cd src && cargo run --quiet --manifest-path rust/Cargo.toml --bin document
     Rscript -e "devtools::document()"
     Rscript -e "devtools::build_readme()"
 
@@ -32,4 +33,4 @@ build:
     Rscript -e "devtools::build(path = '.')"
 
 pkg-check:
-    Rscript -e "devtools::check()"
+    Rscript -e "devtools::check(remote = TRUE, manual = TRUE)"
