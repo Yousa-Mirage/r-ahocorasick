@@ -27,3 +27,9 @@ site:
     Rscript -e "devtools::build_readme()"
     Rscript -e "pkgdown::build_site()"
     @xdg-open docs/index.html || true
+
+build:
+    Rscript -e "devtools::build(path = '.')"
+
+pkg-check:
+    Rscript -e "devtools::check()"
