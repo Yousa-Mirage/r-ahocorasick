@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 [`aho-corasick`](https://docs.rs/aho-corasick/) crate, allows you to search for
 many substrings in one or more strings with linear complexity in R. It builds a
 reusable automaton once and then uses it for detection, counting, locating, and
-extraction.
+extraction and replacement.
 
 [Aho-Corasick](https://en.wikipedia.org/wiki/Aho–Corasick_algorithm) is a
 multiple-pattern string matching algorithm designed to search for many keywords
@@ -75,7 +75,7 @@ ac <- ac_build(patterns)
 ```
 
 You can set `ascii_case_insensitive = TRUE` to make the search case-insensitive
-for ASCII characters.
+for ASCII characters (`a-z` and `A-Z`) only.
 
 ### Extracting Matches
 
@@ -172,11 +172,48 @@ ac_count(ac, doc)
 These functions are usually the cheapest way to answer yes/no or frequency
 questions without materializing the matched strings or offsets.
 
+### Replacing Matches
+
+Use `ac_replace()` to replace every non-overlapping match with the replacement
+for the matched pattern.
+
+```{r}
+#| label: replace
+
+patterns <- c("fox", "brown", "quick")
+doc <- "The quick brown fox."
+ac <- ac_build(patterns)
+
+ac_replace(ac, doc, c("sloth", "grey", "slow"))
+```
+
+Use one replacement string to replace all patterns with the same value.
+
+```{r}
+#| label: replace-one
+
+ac_replace(ac, doc, "")
+```
+
+Replacement uses the automaton's match semantics. If you want Polars
+`replace_many(..., leftmost = TRUE)`-style priority, build the automaton with
+`match_kind = "leftmost_first"`.
+
+```{r}
+#| label: replace-leftmost
+
+ac_leftmost <- ac_build(
+  c("append", "appendage", "app"),
+  match_kind = "leftmost_first"
+)
+ac_replace(ac_leftmost, "append the app to the appendage", c("x", "y", "z"))
+```
+
 ### Using With Tidyverse
 
 These search functions work naturally inside `dplyr::mutate()`. Scalar outputs
-like `ac_detect()` and `ac_count()` become ordinary columns, while
-`ac_extract()` and `ac_locate()` can be stored as list-columns.
+like `ac_detect()`, `ac_count()`, and `ac_replace()` become ordinary columns,
+while `ac_extract()` and `ac_locate()` can be stored as list-columns.
 
 ```{r}
 #| label: tidyverse
@@ -196,6 +233,7 @@ docs |>
   dplyr::mutate(
     detected = ac_detect(ac, doc),
     n_matches = ac_count(ac, doc),
+    replaced = ac_replace(ac, doc, "[match]"),
     extracted = ac_extract(ac, doc)
   ) |> 
   tidyr::unnest(extracted)
@@ -213,6 +251,7 @@ ac_na <- ac_build(c("hello", "world"))
 
 ac_detect(ac_na, doc_na, na = "false")
 ac_count(ac_na, doc_na, na = "zero")
+ac_replace(ac_na, doc_na, "[match]", na = "empty")
 ```
 
 For list-column workflows, `ac_locate(..., na = "empty")` and

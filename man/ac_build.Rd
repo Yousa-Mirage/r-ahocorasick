@@ -50,6 +50,6 @@ length(ac)
 ac_info(ac)
 }
 \seealso{
-\code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_locate_bytes]{ac_locate_bytes()}}, \code{\link[=ac_detect]{ac_detect()}},
-\code{\link[=ac_count]{ac_count()}}, \code{\link[=ac_extract]{ac_extract()}}, \code{\link[=ac_patterns]{ac_patterns()}}, \code{\link[=ac_info]{ac_info()}}.
+\code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_locate_df]{ac_locate_df()}}, \code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_count]{ac_count()}},
+\code{\link[=ac_extract]{ac_extract()}}, \code{\link[=ac_extract_df]{ac_extract_df()}}, \code{\link[=ac_replace]{ac_replace()}}, \code{\link[=ac_patterns]{ac_patterns()}}.
 }

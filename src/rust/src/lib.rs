@@ -317,6 +317,27 @@ fn rust_ac_count(
     Ok(out)
 }
 
+// Replace non-overlapping matches in each haystack.
+#[extendr]
+fn rust_ac_replace(
+    ptr: ExternalPtr<AcAutomaton>,
+    doc: Vec<String>,
+    replace_with: Vec<String>,
+) -> Result<Vec<String>> {
+    let automaton = ptr.try_addr()?;
+
+    let mut out = Vec::with_capacity(doc.len());
+    for haystack in &doc {
+        let replaced = automaton
+            .ac
+            .try_replace_all(haystack, &replace_with)
+            .map_err(|err| Error::Other(err.to_string()))?;
+        out.push(replaced);
+    }
+
+    Ok(out)
+}
+
 // Return automaton metadata.
 #[extendr]
 fn rust_ac_info(ptr: ExternalPtr<AcAutomaton>) -> Result<List> {
@@ -343,6 +364,7 @@ extendr_module! {
     fn rust_ac_extract;
     fn rust_ac_detect;
     fn rust_ac_count;
+    fn rust_ac_replace;
     fn rust_ac_info;
     fn rust_ac_is_valid;
 }

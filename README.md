@@ -21,7 +21,7 @@ algorithm.**
 [`aho-corasick`](https://docs.rs/aho-corasick/) crate, allows you to
 search for many substrings in one or more strings with linear complexity
 in R. It builds a reusable automaton once and then uses it for
-detection, counting, locating, and extraction.
+detection, counting, locating, and extraction and replacement.
 
 [Aho-Corasick](https://en.wikipedia.org/wiki/Aho–Corasick_algorithm) is
 a multiple-pattern string matching algorithm designed to search for many
@@ -62,7 +62,7 @@ ac <- ac_build(patterns)
 ```
 
 You can set `ascii_case_insensitive = TRUE` to make the search
-case-insensitive for ASCII characters.
+case-insensitive for ASCII characters (`a-z` and `A-Z`) only.
 
 ### Extracting Matches
 
@@ -176,11 +176,46 @@ These functions are usually the cheapest way to answer yes/no or
 frequency questions without materializing the matched strings or
 offsets.
 
+### Replacing Matches
+
+Use `ac_replace()` to replace every non-overlapping match with the
+replacement for the matched pattern.
+
+``` r
+patterns <- c("fox", "brown", "quick")
+doc <- "The quick brown fox."
+ac <- ac_build(patterns)
+
+ac_replace(ac, doc, c("sloth", "grey", "slow"))
+#> [1] "The slow grey sloth."
+```
+
+Use one replacement string to replace all patterns with the same value.
+
+``` r
+ac_replace(ac, doc, "")
+#> [1] "The   ."
+```
+
+Replacement uses the automaton’s match semantics. If you want Polars
+`replace_many(..., leftmost = TRUE)`-style priority, build the automaton
+with `match_kind = "leftmost_first"`.
+
+``` r
+ac_leftmost <- ac_build(
+  c("append", "appendage", "app"),
+  match_kind = "leftmost_first"
+)
+ac_replace(ac_leftmost, "append the app to the appendage", c("x", "y", "z"))
+#> [1] "x the z to the xage"
+```
+
 ### Using With Tidyverse
 
 These search functions work naturally inside `dplyr::mutate()`. Scalar
-outputs like `ac_detect()` and `ac_count()` become ordinary columns,
-while `ac_extract()` and `ac_locate()` can be stored as list-columns.
+outputs like `ac_detect()`, `ac_count()`, and `ac_replace()` become
+ordinary columns, while `ac_extract()` and `ac_locate()` can be stored
+as list-columns.
 
 ``` r
 patterns <- c("hello", "world", "fish")
@@ -198,16 +233,17 @@ docs |>
   dplyr::mutate(
     detected = ac_detect(ac, doc),
     n_matches = ac_count(ac, doc),
+    replaced = ac_replace(ac, doc, "[match]"),
     extracted = ac_extract(ac, doc)
   ) |> 
   tidyr::unnest(extracted)
-#> # A tibble: 4 × 5
-#>   doc                                  detected n_matches matches patterns
-#>   <chr>                                <lgl>        <int> <chr>   <chr>   
-#> 1 this is my first hello world. hello! TRUE             3 hello   hello   
-#> 2 this is my first hello world. hello! TRUE             3 world   world   
-#> 3 this is my first hello world. hello! TRUE             3 hello   hello   
-#> 4 fish and chips                       TRUE             1 fish    fish
+#> # A tibble: 4 × 6
+#>   doc                               detected n_matches replaced matches patterns
+#>   <chr>                             <lgl>        <int> <chr>    <chr>   <chr>   
+#> 1 this is my first hello world. he… TRUE             3 this is… hello   hello   
+#> 2 this is my first hello world. he… TRUE             3 this is… world   world   
+#> 3 this is my first hello world. he… TRUE             3 this is… hello   hello   
+#> 4 fish and chips                    TRUE             1 [match]… fish    fish
 ```
 
 ## Missing Values
@@ -222,6 +258,8 @@ ac_detect(ac_na, doc_na, na = "false")
 #> [1]  TRUE FALSE  TRUE
 ac_count(ac_na, doc_na, na = "zero")
 #> [1] 1 0 1
+ac_replace(ac_na, doc_na, "[match]", na = "empty")
+#> [1] "[match]" ""        "[match]"
 ```
 
 For list-column workflows, `ac_locate(..., na = "empty")` and

@@ -48,3 +48,4 @@ reference:
       - ac_locate
       - ac_locate_df
       - ac_locate_bytes
+      - ac_replace

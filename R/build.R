@@ -20,8 +20,8 @@
 #'     later duplicates.
 #'
 #' @return An immutable `<ac_automaton>` object.
-#' @seealso [ac_locate()], [ac_locate_bytes()], [ac_detect()],
-#'   [ac_count()], [ac_extract()], [ac_patterns()], [ac_info()].
+#' @seealso [ac_locate()], [ac_locate_df()], [ac_detect()], [ac_count()],
+#'   [ac_extract()], [ac_extract_df()], [ac_replace()], [ac_patterns()].
 #'
 #' @examples
 #' ac <- ac_build(c("hello", "world"))
