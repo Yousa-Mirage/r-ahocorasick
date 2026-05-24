@@ -354,7 +354,7 @@ Python. These are what I found:
   It is a special tool for bioinformatics, and its object system is `XString` /
   `DNAString` / `XStringSet`. It is not suitable as a drop-in multi-mode
   retrieval tool for general R string vectors.
-- [`r-polars`](https://pola-rs.github.io/r-polars): Polars' string expressions
+- [`r-polars`](https://pola-rs.github.io/r-polars/): Polars' string expressions
   also use the Aho-Corasick algorithm to match (based on [the same
   crate](https://docs.rs/aho-corasick/) as this package). **If your data is
   already in a DataFrame, I recommend you use Polars for matching strings
