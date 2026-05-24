@@ -13,7 +13,7 @@ Version](https://yousa-mirage.r-universe.dev/ahocorasick/badges/version)](https:
 Stars](https://img.shields.io/github/stars/Yousa-Mirage/r-ahocorasick?style=social)](https://github.com/Yousa-Mirage/r-ahocorasick/stargazers)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Docs Dev
+[![Docs dev
 Version](https://img.shields.io/badge/docs-dev-blue.svg)](https://yousa-mirage.github.io/r-ahocorasick/)
 [![Ask
 DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yousa-Mirage/r-ahocorasick)
@@ -48,7 +48,7 @@ Install the released version from CRAN:
 install.packages("ahocorasick")
 ```
 
-Install the released version from r-universe:
+Install the released version from R-universe:
 
 ``` r
 install.packages("ahocorasick", repos = "https://yousa-mirage.r-universe.dev")
