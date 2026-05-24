@@ -18,3 +18,4 @@
 ^src/Makevars\.win$
 ^README\.Rmd$
 ^cran-comments\.md$
+^CRAN-SUBMISSION$

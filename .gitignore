@@ -10,6 +10,7 @@ ref/*
 # R package build/check outputs.
 *.tar.gz
 *.Rcheck/
+CRAN-SUBMISSION
 Meta/
 doc/
 src/*.o
