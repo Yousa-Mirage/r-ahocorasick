@@ -1,6 +1,6 @@
 Package: ahocorasick
 Title: Fast Multi-Pattern String Matching with Aho-Corasick
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R: 
     c(person(given = "Hao",
              family = "Cheng",
