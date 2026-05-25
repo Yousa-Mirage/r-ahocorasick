@@ -48,10 +48,12 @@ Install the released version from CRAN:
 install.packages("ahocorasick")
 ```
 
-Install the released version from R-universe:
+Install the released version from R-universe/R-multiverse:
 
 ``` r
 install.packages("ahocorasick", repos = "https://yousa-mirage.r-universe.dev")
+# or
+# install.packages("ahocorasick", repos = "https://community.r-multiverse.org")
 ```
 
 Install the development version from source. You need Cargo and `rustc`
