@@ -106,6 +106,65 @@ ac_locate <- function(
   out
 }
 
+#' Locate pattern matches in files
+#'
+#' `ac_locate_file()` searches files with a compiled automaton and returns one
+#' list element per file. Character offsets are 1-based and inclusive, so they
+#' can be used directly with `substr()`.
+#'
+#' @details
+#' File location search is always non-streaming. Converting byte offsets from a
+#' streaming search into R-facing character offsets would require a second pass
+#' over the same file to reconstruct UTF-8 character boundaries. Keeping
+#' `ac_locate_file()` as a simple in-memory search is the clearest
+#' implementation.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param path A vector of file paths to search.
+#'
+#' @return A list with the same length as `path`. Each element is a data frame
+#'   with one row per match and three columns:
+#'  * `pattern_id`: Index of the matched pattern in `ac_patterns(ac)`.
+#'  * `start`: 1-based index of the first character in each match.
+#'  * `end`: 1-based index of the last character in each match.
+#' @seealso [ac_locate()], [ac_detect_file()], [ac_count_file()],
+#'   [ac_extract_file()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' path <- tempfile()
+#' writeLines("hello world", path)
+#' ac_locate_file(ac, path)
+#' @export
+ac_locate_file <- function(ac, path) {
+  ac <- validate_ac_automaton(ac)
+  path <- validate_stream_file_path(path)
+
+  out <- rep(list(new_locate_result()), length(path))
+  names(out) <- names(path)
+
+  raw <- rust_ac_locate_file(ac$ptr, unname(path))
+
+  if (length(raw$file_id) == 0L) {
+    return(out)
+  }
+
+  runs <- rle(raw$file_id)
+  ends <- cumsum(runs$lengths)
+  starts <- ends - runs$lengths + 1L
+
+  for (i in seq_along(starts)) {
+    rows <- seq.int(starts[[i]], ends[[i]])
+    out[[runs$values[[i]]]] <- new_locate_result(
+      raw$pattern_id[rows],
+      raw$start[rows],
+      raw$end[rows]
+    )
+  }
+
+  out
+}
+
 #' Locate pattern matches with byte offsets
 #'
 #' `ac_locate_bytes()` searches a character vector with a compiled automaton
