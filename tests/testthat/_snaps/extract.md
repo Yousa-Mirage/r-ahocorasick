@@ -1,7 +1,7 @@
 # ac_extract_file errors when stream search is incompatible with match_kind
 
     Code
-      ac_extract_file(ac, path)
+      ac_extract_file(ac, path, stream = TRUE)
     Condition
       Error in `ac_extract_file()`:
       ! File stream search requires `match_kind = "standard"`.

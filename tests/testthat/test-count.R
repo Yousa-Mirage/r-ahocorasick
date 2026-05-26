@@ -65,6 +65,7 @@ test_that("ac_count_file supports UTF-8 matching", {
   writeLines("一把把把把住了", path, useBytes = TRUE)
 
   expect_equal(ac_count_file(ac, path), 2L)
+  expect_equal(ac_count_file(ac, path, stream = TRUE), 2L)
 })
 
 test_that("ac_count_file supports here paths", {
@@ -72,6 +73,18 @@ test_that("ac_count_file supports here paths", {
   ac <- ac_build("Package")
 
   expect_equal(ac_count_file(ac, here::here("DESCRIPTION")), 1L)
+})
+
+test_that("ac_count_file supports leftmost match kinds without streaming", {
+  ac <- ac_build(
+    c("append", "appendage", "app"),
+    match_kind = "leftmost_longest"
+  )
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("appendage app", path)
+
+  expect_equal(ac_count_file(ac, path), 2L)
 })
 
 test_that("ac_count_file errors when stream search is incompatible with match_kind", {
@@ -82,7 +95,7 @@ test_that("ac_count_file errors when stream search is incompatible with match_ki
 
   expect_snapshot(
     error = TRUE,
-    ac_count_file(ac, path)
+    ac_count_file(ac, path, stream = TRUE)
   )
 })
 

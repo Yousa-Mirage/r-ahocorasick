@@ -107,15 +107,14 @@ ac_extract <- function(
 
 #' Extract pattern matches from files
 #'
-#' `ac_extract_file()` streams files from disk and returns one list element per
-#' file. Each element contains the matched text and the corresponding pattern
-#' values. Files are not read fully into R memory.
-#'
-#' Stream search is provided by the Rust `aho-corasick` crate and requires an
-#' automaton built with `match_kind = "standard"`.
+#' `ac_extract_file()` returns one list element per file. Each element contains
+#' the matched text and the corresponding pattern values.
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param path A vector of file paths to search.
+#' @param stream If `FALSE` (default), each file is read into memory before
+#'   searching. If `TRUE`, files are searched as streams. Stream search requires
+#'   an automaton built with `match_kind = "standard"`.
 #'
 #' @return A list with the same length as `path`. Each element is a data frame
 #'   with one row per match and two columns:
@@ -129,15 +128,22 @@ ac_extract <- function(
 #' writeLines("hello world", path)
 #' ac_extract_file(ac, path)
 #' @export
-ac_extract_file <- function(ac, path) {
+ac_extract_file <- function(ac, path, stream = FALSE) {
   ac <- validate_ac_automaton(ac)
-  ac <- validate_match_kind_for_file(ac)
+  stream <- validate_file_stream(stream)
+  if (stream) {
+    ac <- validate_match_kind_for_file(ac)
+  }
   path <- validate_stream_file_path(path)
 
   out <- rep(list(new_extract_result()), length(path))
   names(out) <- names(path)
 
-  raw <- rust_ac_extract_file(ac$ptr, unname(path))
+  raw <- if (stream) {
+    rust_ac_extract_file_stream(ac$ptr, unname(path))
+  } else {
+    rust_ac_extract_file(ac$ptr, unname(path))
+  }
 
   if (length(raw$file_id) == 0L) {
     return(out)

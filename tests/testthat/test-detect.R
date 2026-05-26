@@ -55,6 +55,7 @@ test_that("ac_detect_file supports UTF-8 matching", {
   writeLines("前缀x😀中后缀", paths[[2]], useBytes = TRUE)
 
   expect_equal(ac_detect_file(ac, paths), c(TRUE, TRUE))
+  expect_equal(ac_detect_file(ac, paths, stream = TRUE), c(TRUE, TRUE))
 })
 
 test_that("ac_detect_file supports here paths", {
@@ -62,6 +63,15 @@ test_that("ac_detect_file supports here paths", {
   ac <- ac_build("Package")
 
   expect_true(ac_detect_file(ac, here::here("DESCRIPTION")))
+})
+
+test_that("ac_detect_file supports leftmost match kinds without streaming", {
+  ac <- ac_build("hello", match_kind = "leftmost_first")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("hello", path)
+
+  expect_true(ac_detect_file(ac, path))
 })
 
 test_that("ac_detect_file errors when stream search is incompatible with match_kind", {
@@ -72,7 +82,7 @@ test_that("ac_detect_file errors when stream search is incompatible with match_k
 
   expect_snapshot(
     error = TRUE,
-    ac_detect_file(ac, path)
+    ac_detect_file(ac, path, stream = TRUE)
   )
 })
 

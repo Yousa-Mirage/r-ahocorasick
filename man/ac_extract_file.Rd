@@ -4,12 +4,16 @@
 \alias{ac_extract_file}
 \title{Extract pattern matches from files}
 \usage{
-ac_extract_file(ac, path)
+ac_extract_file(ac, path, stream = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
 
 \item{path}{A vector of file paths to search.}
+
+\item{stream}{If \code{FALSE} (default), each file is read into memory before
+searching. If \code{TRUE}, files are searched as streams. Stream search requires
+an automaton built with \code{match_kind = "standard"}.}
 }
 \value{
 A list with the same length as \code{path}. Each element is a data frame
@@ -20,13 +24,8 @@ with one row per match and two columns:
 }
 }
 \description{
-\code{ac_extract_file()} streams files from disk and returns one list element per
-file. Each element contains the matched text and the corresponding pattern
-values. Files are not read fully into R memory.
-}
-\details{
-Stream search is provided by the Rust \code{aho-corasick} crate and requires an
-automaton built with \code{match_kind = "standard"}.
+\code{ac_extract_file()} returns one list element per file. Each element contains
+the matched text and the corresponding pattern values.
 }
 \examples{
 ac <- ac_build(c("hello", "world"))

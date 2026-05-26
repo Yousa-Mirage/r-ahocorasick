@@ -4,7 +4,7 @@
 \alias{ac_replace_file}
 \title{Replace pattern matches in files}
 \usage{
-ac_replace_file(ac, path, replace_with, output = NULL)
+ac_replace_file(ac, path, replace_with, output = NULL, stream = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
@@ -19,19 +19,18 @@ by position.}
 \item{output}{A vector of output file paths. It must have the same
 length as \code{path}. If \code{NULL}, output paths are created by adding
 \code{"_replaced"} suffix. Existing output files are overwritten.}
+
+\item{stream}{If \code{FALSE} (default), each file is read into memory before
+replacement. If \code{TRUE}, files are searched and replaced as streams. Stream
+replacement requires an automaton built with \code{match_kind = "standard"}.}
 }
 \value{
 A character vector of output file paths with the same length as
 \code{path}.
 }
 \description{
-\code{ac_replace_file()} streams input files from disk, replaces all
-non-overlapping matches and writes the result to output files. Input files
-are not read fully into R memory.
-}
-\details{
-Stream replacement is provided by the Rust \code{aho-corasick} crate and requires
-an automaton built with \code{match_kind = "standard"}.
+\code{ac_replace_file()} replaces all non-overlapping matches in input files and
+writes the result to output files.
 }
 \examples{
 ac <- ac_build(c("fox", "brown", "quick"))

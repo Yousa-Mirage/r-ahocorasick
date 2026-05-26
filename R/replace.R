@@ -64,12 +64,8 @@ ac_replace <- function(
 
 #' Replace pattern matches in files
 #'
-#' `ac_replace_file()` streams input files from disk, replaces all
-#' non-overlapping matches and writes the result to output files. Input files
-#' are not read fully into R memory.
-#'
-#' Stream replacement is provided by the Rust `aho-corasick` crate and requires
-#' an automaton built with `match_kind = "standard"`.
+#' `ac_replace_file()` replaces all non-overlapping matches in input files and
+#' writes the result to output files.
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param path A vector of input file paths to search and replace.
@@ -80,6 +76,9 @@ ac_replace <- function(
 #' @param output A vector of output file paths. It must have the same
 #'   length as `path`. If `NULL`, output paths are created by adding
 #'   `"_replaced"` suffix. Existing output files are overwritten.
+#' @param stream If `FALSE` (default), each file is read into memory before
+#'   replacement. If `TRUE`, files are searched and replaced as streams. Stream
+#'   replacement requires an automaton built with `match_kind = "standard"`.
 #'
 #' @return A character vector of output file paths with the same length as
 #'   `path`.
@@ -95,15 +94,23 @@ ac_replace_file <- function(
   ac,
   path,
   replace_with,
-  output = NULL
+  output = NULL,
+  stream = FALSE
 ) {
   ac <- validate_ac_automaton(ac)
-  ac <- validate_match_kind_for_file(ac)
+  stream <- validate_file_stream(stream)
+  if (stream) {
+    ac <- validate_match_kind_for_file(ac)
+  }
   path <- validate_stream_file_path(path)
   replace_with <- validate_replace_with(ac, replace_with)
   output <- validate_replace_output_path(path, output)
 
-  out <- rust_ac_replace_file(ac$ptr, unname(path), unname(output), replace_with)
+  out <- if (stream) {
+    rust_ac_replace_file_stream(ac$ptr, unname(path), unname(output), replace_with)
+  } else {
+    rust_ac_replace_file(ac$ptr, unname(path), unname(output), replace_with)
+  }
   names(out) <- names(path)
   out
 }

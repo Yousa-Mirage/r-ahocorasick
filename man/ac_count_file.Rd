@@ -4,24 +4,23 @@
 \alias{ac_count_file}
 \title{Count pattern matches in files}
 \usage{
-ac_count_file(ac, path)
+ac_count_file(ac, path, stream = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
 
 \item{path}{A vector of file paths to search.}
+
+\item{stream}{If \code{FALSE} (default), each file is read into memory before
+searching. If \code{TRUE}, files are searched as streams. Stream search requires
+an automaton built with \code{match_kind = "standard"}.}
 }
 \value{
 An integer vector with the same length as \code{path}.
 }
 \description{
-\code{ac_count_file()} streams files from disk and returns the number of
-non-overlapping pattern matches in each file. Files are not read fully into R
-memory.
-}
-\details{
-Stream search is provided by the Rust \code{aho-corasick} crate and requires an
-automaton built with \code{match_kind = "standard"}.
+\code{ac_count_file()} returns the number of non-overlapping pattern matches in
+each file.
 }
 \examples{
 ac <- ac_build(c("hello", "world"))

@@ -4,23 +4,22 @@
 \alias{ac_detect_file}
 \title{Detect pattern matches in files}
 \usage{
-ac_detect_file(ac, path)
+ac_detect_file(ac, path, stream = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
 
 \item{path}{A vector of file paths to search.}
+
+\item{stream}{If \code{FALSE} (default), each file is read into memory before
+searching. If \code{TRUE}, files are searched as streams. Stream search requires
+an automaton built with \code{match_kind = "standard"}.}
 }
 \value{
 A logical vector with the same length as \code{path}.
 }
 \description{
-\code{ac_detect_file()} streams files from disk and returns whether each file has
-at least one pattern match. Files are not read fully into R memory.
-}
-\details{
-Stream search is provided by the Rust \code{aho-corasick} crate and requires an
-automaton built with \code{match_kind = "standard"}.
+\code{ac_detect_file()} returns whether each file has at least one pattern match.
 }
 \examples{
 ac <- ac_build(c("hello", "world"))

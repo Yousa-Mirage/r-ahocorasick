@@ -127,12 +127,34 @@ test_that("ac_extract_file keeps actual matched text", {
   writeLines("ABC 你a😀", path, useBytes = TRUE)
 
   hits <- ac_extract_file(ac, path)
+  stream_hits <- ac_extract_file(ac, path, stream = TRUE)
 
   expect_equal(
     hits[[1]],
     data.frame(
       matches = c("ABC", "你a😀"),
       patterns = c("abc", "你a😀")
+    )
+  )
+  expect_equal(stream_hits, hits)
+})
+
+test_that("ac_extract_file supports leftmost match kinds without streaming", {
+  ac <- ac_build(
+    c("append", "appendage", "app"),
+    match_kind = "leftmost_longest"
+  )
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("appendage app", path)
+
+  hits <- ac_extract_file(ac, path)
+
+  expect_equal(
+    hits[[1]],
+    data.frame(
+      matches = c("appendage", "app"),
+      patterns = c("appendage", "app")
     )
   )
 })
@@ -145,7 +167,7 @@ test_that("ac_extract_file errors when stream search is incompatible with match_
 
   expect_snapshot(
     error = TRUE,
-    ac_extract_file(ac, path)
+    ac_extract_file(ac, path, stream = TRUE)
   )
 })
 

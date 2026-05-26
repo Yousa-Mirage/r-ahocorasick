@@ -18,7 +18,7 @@
 # ac_replace_file errors when stream search is incompatible with match_kind
 
     Code
-      ac_replace_file(ac, path, "x")
+      ac_replace_file(ac, path, "x", stream = TRUE)
     Condition
       Error in `ac_replace_file()`:
       ! File stream search requires `match_kind = "standard"`.

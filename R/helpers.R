@@ -135,6 +135,17 @@ validate_stream_file_path <- function(path) {
   path
 }
 
+validate_file_stream <- function(stream) {
+  if (!checkmate::test_flag(stream)) {
+    cli::cli_abort(
+      "{.arg stream} must be a logical value.",
+      call = rlang::caller_env()
+    )
+  }
+
+  stream
+}
+
 validate_match_kind_for_file <- function(ac_automaton) {
   if (ac_automaton$info$match_kind != "standard") {
     cli::cli_abort(

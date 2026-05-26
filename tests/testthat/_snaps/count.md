@@ -1,7 +1,7 @@
 # ac_count_file errors when stream search is incompatible with match_kind
 
     Code
-      ac_count_file(ac, path)
+      ac_count_file(ac, path, stream = TRUE)
     Condition
       Error in `ac_count_file()`:
       ! File stream search requires `match_kind = "standard"`.

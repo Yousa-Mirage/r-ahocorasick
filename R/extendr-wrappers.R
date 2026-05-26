@@ -17,15 +17,23 @@ rust_ac_detect <- function(ptr, doc) .Call(wrap__rust_ac_detect, ptr, doc)
 
 rust_ac_detect_file <- function(ptr, path) .Call(wrap__rust_ac_detect_file, ptr, path)
 
+rust_ac_detect_file_stream <- function(ptr, path) .Call(wrap__rust_ac_detect_file_stream, ptr, path)
+
 rust_ac_count <- function(ptr, doc, overlapping) .Call(wrap__rust_ac_count, ptr, doc, overlapping)
 
 rust_ac_count_file <- function(ptr, path) .Call(wrap__rust_ac_count_file, ptr, path)
 
+rust_ac_count_file_stream <- function(ptr, path) .Call(wrap__rust_ac_count_file_stream, ptr, path)
+
 rust_ac_extract_file <- function(ptr, path) .Call(wrap__rust_ac_extract_file, ptr, path)
+
+rust_ac_extract_file_stream <- function(ptr, path) .Call(wrap__rust_ac_extract_file_stream, ptr, path)
 
 rust_ac_replace <- function(ptr, doc, replace_with) .Call(wrap__rust_ac_replace, ptr, doc, replace_with)
 
 rust_ac_replace_file <- function(ptr, path, output, replace_with) .Call(wrap__rust_ac_replace_file, ptr, path, output, replace_with)
+
+rust_ac_replace_file_stream <- function(ptr, path, output, replace_with) .Call(wrap__rust_ac_replace_file_stream, ptr, path, output, replace_with)
 
 rust_ac_info <- function(ptr) .Call(wrap__rust_ac_info, ptr)
 

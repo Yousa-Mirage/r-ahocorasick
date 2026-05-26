@@ -1,6 +1,6 @@
 mod offsets;
 
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, BufWriter};
 
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, MatchKind};
@@ -289,9 +289,32 @@ fn rust_ac_detect(ptr: ExternalPtr<AcAutomaton>, doc: Vec<String>) -> Result<Vec
     Ok(out)
 }
 
-// Return whether each file has at least one match using stream search.
+// Return whether each file has at least one match.
 #[extendr]
 fn rust_ac_detect_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<Vec<bool>> {
+    let automaton = ptr.try_addr()?;
+    let mut out = Vec::with_capacity(path.len());
+
+    for file_path in &path {
+        let haystack = fs::read(file_path)
+            .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
+        let detected = automaton
+            .ac
+            .try_find(haystack.as_slice())
+            .map_err(|err| Error::Other(err.to_string()))?
+            .is_some();
+        out.push(detected);
+    }
+
+    Ok(out)
+}
+
+// Return whether each file has at least one match (stream).
+#[extendr]
+fn rust_ac_detect_file_stream(
+    ptr: ExternalPtr<AcAutomaton>,
+    path: Vec<String>,
+) -> Result<Vec<bool>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(path.len());
 
@@ -345,9 +368,29 @@ fn rust_ac_count(
     Ok(out)
 }
 
-// Return the number of non-overlapping stream matches in each file.
+// Return the number of non-overlapping matches in each file.
 #[extendr]
 fn rust_ac_count_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<Vec<i32>> {
+    let automaton = ptr.try_addr()?;
+    let mut out = Vec::with_capacity(path.len());
+
+    for file_path in &path {
+        let haystack = fs::read(file_path)
+            .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
+        let matches = automaton
+            .ac
+            .try_find_iter(haystack.as_slice())
+            .map_err(|err| Error::Other(err.to_string()))?;
+
+        out.push(matches.count() as i32);
+    }
+
+    Ok(out)
+}
+
+// Return the number of non-overlapping matches in each file (stream).
+#[extendr]
+fn rust_ac_count_file_stream(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<Vec<i32>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(path.len());
 
@@ -371,9 +414,48 @@ fn rust_ac_count_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Resul
     Ok(out)
 }
 
-// Return matched text and pattern ids for each file.
+// Return matched text in each file.
 #[extendr]
 fn rust_ac_extract_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<List> {
+    let automaton = ptr.try_addr()?;
+
+    let mut out_file_id = Vec::new();
+    let mut out_pattern_id = Vec::new();
+    let mut out_matches = Vec::new();
+
+    for (file_index, file_path) in path.iter().enumerate() {
+        let file_id = file_index + 1;
+        let haystack = fs::read(file_path)
+            .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
+        let matches = automaton
+            .ac
+            .try_find_iter(haystack.as_slice())
+            .map_err(|err| Error::Other(err.to_string()))?;
+
+        for mat in matches {
+            let pattern_id = mat.pattern().as_usize() + 1;
+            let matched = std::str::from_utf8(&haystack[mat.start()..mat.end()])
+                .map_err(|err| Error::Other(format!("matched bytes are not UTF-8: {err}")))?
+                .to_owned();
+
+            out_file_id.push(file_id);
+            out_pattern_id.push(pattern_id);
+            out_matches.push(matched);
+        }
+    }
+
+    let list = list!(
+        file_id = out_file_id,
+        pattern_id = out_pattern_id,
+        matches = out_matches
+    );
+
+    Ok(list)
+}
+
+// Return matched text in each file (stream).
+#[extendr]
+fn rust_ac_extract_file_stream(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<List> {
     let automaton = ptr.try_addr()?;
 
     let mut out_file_id = Vec::new();
@@ -439,9 +521,33 @@ fn rust_ac_replace(
     Ok(out)
 }
 
-// Stream input files, replace non-overlapping matches and write output files.
+// Replace non-overlapping matches and write output files.
 #[extendr]
 fn rust_ac_replace_file(
+    ptr: ExternalPtr<AcAutomaton>,
+    path: Vec<String>,
+    output: Vec<String>,
+    replace_with: Vec<String>,
+) -> Result<Vec<String>> {
+    let automaton = ptr.try_addr()?;
+
+    for (input_path, output_path) in path.iter().zip(output.iter()) {
+        let haystack = fs::read(input_path)
+            .map_err(|err| Error::Other(format!("failed to read `{input_path}`: {err}")))?;
+        let replaced = automaton
+            .ac
+            .try_replace_all_bytes(haystack.as_slice(), &replace_with)
+            .map_err(|err| Error::Other(err.to_string()))?;
+        fs::write(output_path, replaced)
+            .map_err(|err| Error::Other(format!("failed to write `{output_path}`: {err}")))?;
+    }
+
+    Ok(output)
+}
+
+// Replace non-overlapping matches and write output files (stream).
+#[extendr]
+fn rust_ac_replace_file_stream(
     ptr: ExternalPtr<AcAutomaton>,
     path: Vec<String>,
     output: Vec<String>,
@@ -491,11 +597,15 @@ extendr_module! {
     fn rust_ac_extract;
     fn rust_ac_detect;
     fn rust_ac_detect_file;
+    fn rust_ac_detect_file_stream;
     fn rust_ac_count;
     fn rust_ac_count_file;
+    fn rust_ac_count_file_stream;
     fn rust_ac_extract_file;
+    fn rust_ac_extract_file_stream;
     fn rust_ac_replace;
     fn rust_ac_replace_file;
+    fn rust_ac_replace_file_stream;
     fn rust_ac_info;
     fn rust_ac_is_valid;
 }

@@ -118,12 +118,30 @@ test_that("ac_replace_file supports UTF-8 matching", {
   ac <- ac_build(c("世界", "😀"))
   path <- tempfile(fileext = ".txt")
   output <- tempfile(fileext = ".txt")
-  on.exit(unlink(c(path, output)), add = TRUE)
+  stream_output <- tempfile(fileext = ".txt")
+  on.exit(unlink(c(path, output, stream_output)), add = TRUE)
   writeLines("你好世界😀", path, useBytes = TRUE)
 
   ac_replace_file(ac, path, c("world", "smile"), output = output)
+  ac_replace_file(ac, path, c("world", "smile"), output = stream_output, stream = TRUE)
 
   expect_equal(readLines(output), "你好worldsmile")
+  expect_equal(readLines(stream_output), "你好worldsmile")
+})
+
+test_that("ac_replace_file supports leftmost match kinds without streaming", {
+  ac <- ac_build(
+    c("append", "appendage", "app"),
+    match_kind = "leftmost_longest"
+  )
+  path <- tempfile()
+  output <- tempfile()
+  on.exit(unlink(c(path, output)), add = TRUE)
+  writeLines("append the app to the appendage", path)
+
+  ac_replace_file(ac, path, c("x", "y", "z"), output = output)
+
+  expect_equal(readLines(output), "x the z to the y")
 })
 
 test_that("ac_replace_file errors when output is the input file", {
@@ -162,7 +180,7 @@ test_that("ac_replace_file errors when stream search is incompatible with match_
 
   expect_snapshot(
     error = TRUE,
-    ac_replace_file(ac, path, "x")
+    ac_replace_file(ac, path, "x", stream = TRUE)
   )
 })
 
