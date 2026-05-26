@@ -68,17 +68,19 @@ pub fn rust_ac_count_file_stream(
     for file_path in &path {
         let file = File::open(file_path)
             .map_err(|err| Error::Other(format!("failed to open `{file_path}`: {err}")))?;
-        let mut matches = automaton
+        let matches = automaton
             .ac
             .try_stream_find_iter(file)
             .map_err(|err| Error::Other(err.to_string()))?;
 
-        let count = matches.try_fold(0usize, |count, mat| {
-            mat.map(|_| count + 1)
-                .map_err(|err| Error::Other(err.to_string()))
-        })?;
+        let mut count = 0;
 
-        out.push(count as i32);
+        for mat in matches {
+            mat.map_err(|err| Error::Other(err.to_string()))?;
+            count += 1;
+        }
+
+        out.push(count);
     }
 
     Ok(out)
