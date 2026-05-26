@@ -50,6 +50,7 @@ reference:
       - ac_extract_file
       - ac_locate
       - ac_locate_df
+      - ac_locate_file
       - ac_locate_bytes
       - ac_replace
       - ac_replace_file
