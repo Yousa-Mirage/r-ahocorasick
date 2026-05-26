@@ -57,6 +57,13 @@ test_that("ac_detect_file supports UTF-8 matching", {
   expect_equal(ac_detect_file(ac, paths), c(TRUE, TRUE))
 })
 
+test_that("ac_detect_file supports here paths", {
+  testthat::skip_if_not_installed("here")
+  ac <- ac_build("Package")
+
+  expect_true(ac_detect_file(ac, here::here("DESCRIPTION")))
+})
+
 test_that("ac_detect_file errors when stream search is incompatible with match_kind", {
   ac <- ac_build("hello", match_kind = "leftmost_first")
   path <- tempfile()
@@ -75,6 +82,27 @@ test_that("ac_detect_file errors on missing paths", {
   expect_snapshot(
     error = TRUE,
     ac_detect_file(ac, c("file.txt", NA_character_))
+  )
+})
+
+test_that("ac_detect_file errors when a file does not exist", {
+  ac <- ac_build("hello")
+
+  expect_snapshot(
+    error = TRUE,
+    ac_detect_file(ac, "definitely-missing-ahocorasick-file.txt")
+  )
+})
+
+test_that("ac_detect_file errors when path is not a file", {
+  ac <- ac_build("hello")
+
+  expect_snapshot(
+    error = TRUE,
+    transform = function(x) {
+      gsub(normalizePath(".", mustWork = FALSE), "<testthat-dir>", x, fixed = TRUE)
+    },
+    ac_detect_file(ac, ".")
   )
 })
 

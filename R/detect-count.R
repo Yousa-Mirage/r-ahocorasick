@@ -58,7 +58,7 @@ ac_detect <- function(
 #' automaton built with `match_kind = "standard"`.
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
-#' @param path A character vector of file paths to search.
+#' @param path A vector of file paths to search.
 #'
 #' @return A logical vector with the same length as `path`.
 #' @seealso [ac_detect()], [ac_count_file()], [ac_locate_bytes()].
@@ -71,7 +71,7 @@ ac_detect <- function(
 #' @export
 ac_detect_file <- function(ac, path) {
   ac <- validate_ac_automaton(ac)
-  ac <- validate_match_kind(ac)
+  ac <- validate_match_kind_for_file(ac)
   path <- validate_stream_file_path(path)
 
   out <- rust_ac_detect_file(ac$ptr, unname(path))
@@ -154,7 +154,7 @@ ac_count <- function(
 #' automaton built with `match_kind = "standard"`.
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
-#' @param path A character vector of file paths to search.
+#' @param path A vector of file paths to search.
 #'
 #' @return An integer vector with the same length as `path`.
 #' @seealso [ac_count()], [ac_detect_file()], [ac_locate_bytes()].
@@ -167,34 +167,10 @@ ac_count <- function(
 #' @export
 ac_count_file <- function(ac, path) {
   ac <- validate_ac_automaton(ac)
-  ac <- validate_match_kind(ac)
+  ac <- validate_match_kind_for_file(ac)
   path <- validate_stream_file_path(path)
 
   out <- rust_ac_count_file(ac$ptr, unname(path))
   names(out) <- names(path)
   out
-}
-
-validate_stream_file_path <- function(path) {
-  if (!checkmate::test_character(path, any.missing = FALSE)) {
-    cli::cli_abort(
-      "{.arg path} must be a character vector with no missing values.",
-      call = rlang::caller_env()
-    )
-  }
-
-  enc2utf8(path)
-}
-
-validate_match_kind <- function(ac_automaton) {
-  if (ac_automaton$info$match_kind != "standard") {
-    cli::cli_abort(
-      c(
-        "File stream search requires {.code match_kind = \"standard\"}.",
-        "i" = "Rebuild the automaton with {.code match_kind = \"standard\"} to search files."
-      ),
-      call = rlang::caller_env()
-    )
-  }
-  ac_automaton
 }

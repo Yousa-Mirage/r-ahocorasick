@@ -9,7 +9,7 @@ ac_detect_file(ac, path)
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
 
-\item{path}{A character vector of file paths to search.}
+\item{path}{A vector of file paths to search.}
 }
 \value{
 A logical vector with the same length as \code{path}.
