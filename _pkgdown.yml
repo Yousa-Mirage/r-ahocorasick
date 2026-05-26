@@ -37,14 +37,14 @@ reference:
   - title: Build Automatons
     contents:
       - ac_build
-      - ac_patterns
       - ac_info
+      - ac_patterns
   - title: Search in Documents
     contents:
-      - ac_detect
-      - ac_detect_file
       - ac_count
       - ac_count_file
+      - ac_detect
+      - ac_detect_file
       - ac_extract
       - ac_extract_df
       - ac_extract_file
