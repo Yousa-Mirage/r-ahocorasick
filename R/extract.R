@@ -115,6 +115,9 @@ ac_extract <- function(
 #' @param stream If `FALSE` (default), each file is read into memory before
 #'   searching. If `TRUE`, files are searched as streams. Stream search requires
 #'   an automaton built with `match_kind = "standard"`.
+#' @param overlapping Default is `FALSE`. If `TRUE`, extract overlapping
+#'   matches. This is only supported when `stream = FALSE` and `ac` was built
+#'   with `match_kind = "standard"`.
 #'
 #' @return A list with the same length as `path`. Each element is a data frame
 #'   with one row per match and two columns:
@@ -128,9 +131,10 @@ ac_extract <- function(
 #' writeLines("hello world", path)
 #' ac_extract_file(ac, path)
 #' @export
-ac_extract_file <- function(ac, path, stream = FALSE) {
+ac_extract_file <- function(ac, path, stream = FALSE, overlapping = FALSE) {
   ac <- validate_ac_automaton(ac)
   stream <- validate_file_stream(stream)
+  overlapping <- validate_file_overlapping(ac, overlapping, stream)
   if (stream) {
     ac <- validate_match_kind_for_file(ac)
   }
@@ -142,7 +146,7 @@ ac_extract_file <- function(ac, path, stream = FALSE) {
   raw <- if (stream) {
     rust_ac_extract_file_stream(ac$ptr, unname(path))
   } else {
-    rust_ac_extract_file(ac$ptr, unname(path))
+    rust_ac_extract_file(ac$ptr, unname(path), overlapping)
   }
 
   if (length(raw$file_id) == 0L) {

@@ -65,14 +65,16 @@ ac_count <- function(
 
 #' Count pattern matches in files
 #'
-#' `ac_count_file()` returns the number of non-overlapping pattern matches in
-#' each file.
+#' `ac_count_file()` returns the number of pattern matches in each file.
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param path A vector of file paths to search.
 #' @param stream If `FALSE` (default), each file is read into memory before
 #'   searching. If `TRUE`, files are searched as streams. Stream search requires
 #'   an automaton built with `match_kind = "standard"`.
+#' @param overlapping Default is `FALSE`. If `TRUE`, count overlapping matches.
+#'   This is only supported when `stream = FALSE` and `ac` was built with
+#'   `match_kind = "standard"`.
 #'
 #' @return An integer vector with the same length as `path`.
 #' @seealso [ac_count()], [ac_detect_file()], [ac_locate_bytes()].
@@ -83,9 +85,10 @@ ac_count <- function(
 #' writeLines("hello hello world", path)
 #' ac_count_file(ac, path)
 #' @export
-ac_count_file <- function(ac, path, stream = FALSE) {
+ac_count_file <- function(ac, path, stream = FALSE, overlapping = FALSE) {
   ac <- validate_ac_automaton(ac)
   stream <- validate_file_stream(stream)
+  overlapping <- validate_file_overlapping(ac, overlapping, stream)
   if (stream) {
     ac <- validate_match_kind_for_file(ac)
   }
@@ -94,7 +97,7 @@ ac_count_file <- function(ac, path, stream = FALSE) {
   out <- if (stream) {
     rust_ac_count_file_stream(ac$ptr, unname(path))
   } else {
-    rust_ac_count_file(ac$ptr, unname(path))
+    rust_ac_count_file(ac$ptr, unname(path), overlapping)
   }
   names(out) <- names(path)
   out

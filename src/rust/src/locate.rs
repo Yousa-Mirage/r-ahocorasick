@@ -90,7 +90,11 @@ pub fn rust_ac_locate_bytes(
 
 // Return matches with R-style character offsets for UTF-8 files.
 #[extendr]
-pub fn rust_ac_locate_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<List> {
+pub fn rust_ac_locate_file(
+    ptr: ExternalPtr<AcAutomaton>,
+    path: Vec<String>,
+    overlapping: bool,
+) -> Result<List> {
     let automaton = ptr.try_addr()?;
 
     let mut out_file_id = Vec::new();
@@ -103,7 +107,8 @@ pub fn rust_ac_locate_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> 
         let haystack = fs::read_to_string(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
 
-        let raw_matches = collect_raw_matches(&automaton.ac, &haystack, false)?;
+        let raw_matches = collect_raw_matches(&automaton.ac, &haystack, overlapping)?;
+
         let offset_map = Utf8OffsetMap::for_offsets(
             &haystack,
             raw_matches

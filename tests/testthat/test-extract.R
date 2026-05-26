@@ -139,6 +139,27 @@ test_that("ac_extract_file keeps actual matched text", {
   expect_equal(stream_hits, hits)
 })
 
+test_that("ac_extract_file supports overlapping matches without streaming", {
+  ac <- ac_build("aba")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("ababa", path)
+
+  expect_equal(
+    ac_extract_file(ac, path)[[1]],
+    data.frame(matches = "aba", patterns = "aba")
+  )
+  expect_equal(
+    ac_extract_file(ac, path, overlapping = TRUE)[[1]],
+    data.frame(matches = c("aba", "aba"), patterns = c("aba", "aba"))
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    ac_extract_file(ac, path, stream = TRUE, overlapping = TRUE)
+  )
+})
+
 test_that("ac_extract_file supports leftmost match kinds without streaming", {
   ac <- ac_build(
     c("append", "appendage", "app"),
@@ -168,6 +189,11 @@ test_that("ac_extract_file errors when stream search is incompatible with match_
   expect_snapshot(
     error = TRUE,
     ac_extract_file(ac, path, stream = TRUE)
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    ac_extract_file(ac, path, overlapping = TRUE)
   )
 })
 

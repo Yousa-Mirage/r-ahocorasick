@@ -121,6 +121,9 @@ ac_locate <- function(
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param path A vector of file paths to search.
+#' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
+#'   matches. This is only supported when `ac` was built with
+#'   `match_kind = "standard"`.
 #'
 #' @return A list with the same length as `path`. Each element is a data frame
 #'   with one row per match and three columns:
@@ -136,14 +139,15 @@ ac_locate <- function(
 #' writeLines("hello world", path)
 #' ac_locate_file(ac, path)
 #' @export
-ac_locate_file <- function(ac, path) {
+ac_locate_file <- function(ac, path, overlapping = FALSE) {
   ac <- validate_ac_automaton(ac)
+  overlapping <- validate_file_overlapping(ac, overlapping)
   path <- validate_stream_file_path(path)
 
   out <- rep(list(new_locate_result()), length(path))
   names(out) <- names(path)
 
-  raw <- rust_ac_locate_file(ac$ptr, unname(path))
+  raw <- rust_ac_locate_file(ac$ptr, unname(path), overlapping)
 
   if (length(raw$file_id) == 0L) {
     return(out)

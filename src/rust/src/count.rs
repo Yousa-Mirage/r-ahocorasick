@@ -38,19 +38,33 @@ pub fn rust_ac_count(
 
 // Return the number of non-overlapping matches in each file.
 #[extendr]
-pub fn rust_ac_count_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<Vec<i32>> {
+pub fn rust_ac_count_file(
+    ptr: ExternalPtr<AcAutomaton>,
+    path: Vec<String>,
+    overlapping: bool,
+) -> Result<Vec<i32>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(path.len());
 
     for file_path in &path {
         let haystack = fs::read(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
-        let matches = automaton
-            .ac
-            .try_find_iter(haystack.as_slice())
-            .map_err(|err| Error::Other(err.to_string()))?;
 
-        out.push(matches.count() as i32);
+        let count = if overlapping {
+            let matches = automaton
+                .ac
+                .try_find_overlapping_iter(haystack.as_slice())
+                .map_err(|err| Error::Other(err.to_string()))?;
+            matches.count()
+        } else {
+            let matches = automaton
+                .ac
+                .try_find_iter(haystack.as_slice())
+                .map_err(|err| Error::Other(err.to_string()))?;
+            matches.count()
+        };
+
+        out.push(count as i32);
     }
 
     Ok(out)

@@ -1,3 +1,21 @@
+# ac_count_file validates overlapping file search
+
+    Code
+      ac_count_file(ac_standard, path, stream = TRUE, overlapping = TRUE)
+    Condition
+      Error in `ac_count_file()`:
+      ! `overlapping = TRUE` is only supported when `stream = FALSE`.
+      i Use the default non-streaming file search to enable overlapping search.
+
+---
+
+    Code
+      ac_count_file(ac_leftmost, path, overlapping = TRUE)
+    Condition
+      Error in `ac_count_file()`:
+      ! `overlapping = TRUE` requires `match_kind = "standard"`.
+      i Rebuild the automaton with `match_kind = "standard"` to enable overlapping file search.
+
 # ac_count_file errors when stream search is incompatible with match_kind
 
     Code

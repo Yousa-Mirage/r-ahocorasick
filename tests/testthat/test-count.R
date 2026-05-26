@@ -65,7 +65,29 @@ test_that("ac_count_file supports UTF-8 matching", {
   writeLines("一把把把把住了", path, useBytes = TRUE)
 
   expect_equal(ac_count_file(ac, path), 2L)
+  expect_equal(ac_count_file(ac, path, overlapping = TRUE), 3L)
   expect_equal(ac_count_file(ac, path, stream = TRUE), 2L)
+})
+
+test_that("ac_count_file validates overlapping file search", {
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("ababa", path)
+
+  ac_standard <- ac_build("aba")
+  expect_equal(ac_count_file(ac_standard, path), 1L)
+  expect_equal(ac_count_file(ac_standard, path, overlapping = TRUE), 2L)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_count_file(ac_standard, path, stream = TRUE, overlapping = TRUE)
+  )
+
+  ac_leftmost <- ac_build("aba", match_kind = "leftmost_longest")
+  expect_snapshot(
+    error = TRUE,
+    ac_count_file(ac_leftmost, path, overlapping = TRUE)
+  )
 })
 
 test_that("ac_count_file supports here paths", {

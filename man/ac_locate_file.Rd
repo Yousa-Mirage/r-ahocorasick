@@ -4,12 +4,16 @@
 \alias{ac_locate_file}
 \title{Locate pattern matches in files}
 \usage{
-ac_locate_file(ac, path)
+ac_locate_file(ac, path, overlapping = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
 
 \item{path}{A vector of file paths to search.}
+
+\item{overlapping}{Default is \code{FALSE}. If \code{TRUE}, report overlapping
+matches. This is only supported when \code{ac} was built with
+\code{match_kind = "standard"}.}
 }
 \value{
 A list with the same length as \code{path}. Each element is a data frame

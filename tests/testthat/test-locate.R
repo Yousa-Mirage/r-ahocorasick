@@ -77,6 +77,42 @@ test_that("ac_locate_file supports leftmost match kinds without streaming", {
   )
 })
 
+test_that("ac_locate_file supports overlapping matches", {
+  ac <- ac_build(c("aba", "bab"))
+  path <- tempfile(fileext = ".txt")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(charToRaw("ababa"), path)
+
+  expect_equal(
+    ac_locate_file(ac, path)[[1]],
+    data.frame(
+      pattern_id = 1L,
+      start = 1L,
+      end = 3L
+    )
+  )
+  expect_equal(
+    ac_locate_file(ac, path, overlapping = TRUE)[[1]],
+    data.frame(
+      pattern_id = c(1L, 2L, 1L),
+      start = c(1L, 2L, 3L),
+      end = c(3L, 4L, 5L)
+    )
+  )
+})
+
+test_that("ac_locate_file errors when overlapping search is incompatible with match_kind", {
+  ac <- ac_build("hello", match_kind = "leftmost_first")
+  path <- tempfile(fileext = ".txt")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(charToRaw("hello"), path)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_locate_file(ac, path, overlapping = TRUE)
+  )
+})
+
 test_that("ac_locate_df returns one row per match", {
   ac <- ac_build(c("hello", "world"))
   doc <- c("hello world", NA_character_, "world hello", "nothing")

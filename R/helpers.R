@@ -158,3 +158,34 @@ validate_match_kind_for_file <- function(ac_automaton) {
   }
   ac_automaton
 }
+
+validate_file_overlapping <- function(ac_automaton, overlapping, stream = FALSE) {
+  if (!checkmate::test_flag(overlapping)) {
+    cli::cli_abort(
+      "{.arg overlapping} must be a logical value.",
+      call = rlang::caller_env()
+    )
+  }
+
+  if (overlapping && stream) {
+    cli::cli_abort(
+      c(
+        "{.code overlapping = TRUE} is only supported when {.code stream = FALSE}.",
+        "i" = "Use the default non-streaming file search to enable overlapping search."
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  if (overlapping && ac_automaton$info$match_kind != "standard") {
+    cli::cli_abort(
+      c(
+        "{.code overlapping = TRUE} requires {.code match_kind = \"standard\"}.",
+        "i" = "Rebuild the automaton with {.code match_kind = \"standard\"} to enable overlapping file search."
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  overlapping
+}

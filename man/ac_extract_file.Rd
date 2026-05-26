@@ -4,7 +4,7 @@
 \alias{ac_extract_file}
 \title{Extract pattern matches from files}
 \usage{
-ac_extract_file(ac, path, stream = FALSE)
+ac_extract_file(ac, path, stream = FALSE, overlapping = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
@@ -14,6 +14,10 @@ ac_extract_file(ac, path, stream = FALSE)
 \item{stream}{If \code{FALSE} (default), each file is read into memory before
 searching. If \code{TRUE}, files are searched as streams. Stream search requires
 an automaton built with \code{match_kind = "standard"}.}
+
+\item{overlapping}{Default is \code{FALSE}. If \code{TRUE}, extract overlapping
+matches. This is only supported when \code{stream = FALSE} and \code{ac} was built
+with \code{match_kind = "standard"}.}
 }
 \value{
 A list with the same length as \code{path}. Each element is a data frame

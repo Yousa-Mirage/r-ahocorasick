@@ -13,7 +13,7 @@ rust_ac_is_valid <- function(ptr) .Call(wrap__rust_ac_is_valid, ptr)
 
 rust_ac_count <- function(ptr, doc, overlapping) .Call(wrap__rust_ac_count, ptr, doc, overlapping)
 
-rust_ac_count_file <- function(ptr, path) .Call(wrap__rust_ac_count_file, ptr, path)
+rust_ac_count_file <- function(ptr, path, overlapping) .Call(wrap__rust_ac_count_file, ptr, path, overlapping)
 
 rust_ac_count_file_stream <- function(ptr, path) .Call(wrap__rust_ac_count_file_stream, ptr, path)
 
@@ -25,7 +25,7 @@ rust_ac_detect_file_stream <- function(ptr, path) .Call(wrap__rust_ac_detect_fil
 
 rust_ac_extract <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_extract, ptr, doc, doc_ids, overlapping)
 
-rust_ac_extract_file <- function(ptr, path) .Call(wrap__rust_ac_extract_file, ptr, path)
+rust_ac_extract_file <- function(ptr, path, overlapping) .Call(wrap__rust_ac_extract_file, ptr, path, overlapping)
 
 rust_ac_extract_file_stream <- function(ptr, path) .Call(wrap__rust_ac_extract_file_stream, ptr, path)
 
@@ -33,7 +33,7 @@ rust_ac_locate <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_l
 
 rust_ac_locate_bytes <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_locate_bytes, ptr, doc, doc_ids, overlapping)
 
-rust_ac_locate_file <- function(ptr, path) .Call(wrap__rust_ac_locate_file, ptr, path)
+rust_ac_locate_file <- function(ptr, path, overlapping) .Call(wrap__rust_ac_locate_file, ptr, path, overlapping)
 
 rust_ac_replace <- function(ptr, doc, replace_with) .Call(wrap__rust_ac_replace, ptr, doc, replace_with)
 

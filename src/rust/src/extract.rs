@@ -45,7 +45,11 @@ pub fn rust_ac_extract(
 
 // Return matched text in each file.
 #[extendr]
-pub fn rust_ac_extract_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<List> {
+pub fn rust_ac_extract_file(
+    ptr: ExternalPtr<AcAutomaton>,
+    path: Vec<String>,
+    overlapping: bool,
+) -> Result<List> {
     let automaton = ptr.try_addr()?;
 
     let mut out_file_id = Vec::new();
@@ -54,21 +58,19 @@ pub fn rust_ac_extract_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) ->
 
     for (file_index, file_path) in path.iter().enumerate() {
         let file_id = file_index + 1;
-        let haystack = fs::read(file_path)
+        let haystack = fs::read_to_string(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
-        let matches = automaton
-            .ac
-            .try_find_iter(haystack.as_slice())
-            .map_err(|err| Error::Other(err.to_string()))?;
 
-        for mat in matches {
-            let pattern_id = mat.pattern().as_usize() + 1;
-            let matched = std::str::from_utf8(&haystack[mat.start()..mat.end()])
-                .map_err(|err| Error::Other(format!("matched bytes are not UTF-8: {err}")))?
+        let raw_matches = collect_raw_matches(&automaton.ac, &haystack, overlapping)?;
+
+        for raw_match in raw_matches {
+            let matched = haystack
+                .get(raw_match.start_byte..raw_match.end_byte)
+                .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?
                 .to_owned();
 
             out_file_id.push(file_id);
-            out_pattern_id.push(pattern_id);
+            out_pattern_id.push(raw_match.pattern_id);
             out_matches.push(matched);
         }
     }

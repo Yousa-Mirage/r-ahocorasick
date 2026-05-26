@@ -1,3 +1,12 @@
+# ac_extract_file supports overlapping matches without streaming
+
+    Code
+      ac_extract_file(ac, path, stream = TRUE, overlapping = TRUE)
+    Condition
+      Error in `ac_extract_file()`:
+      ! `overlapping = TRUE` is only supported when `stream = FALSE`.
+      i Use the default non-streaming file search to enable overlapping search.
+
 # ac_extract_file errors when stream search is incompatible with match_kind
 
     Code
@@ -6,6 +15,15 @@
       Error in `ac_extract_file()`:
       ! File stream search requires `match_kind = "standard"`.
       i Rebuild the automaton with `match_kind = "standard"` to search files.
+
+---
+
+    Code
+      ac_extract_file(ac, path, overlapping = TRUE)
+    Condition
+      Error in `ac_extract_file()`:
+      ! `overlapping = TRUE` requires `match_kind = "standard"`.
+      i Rebuild the automaton with `match_kind = "standard"` to enable overlapping file search.
 
 # ac_extract errors when overlapping search is incompatible with match_kind
 
