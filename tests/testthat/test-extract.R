@@ -97,6 +97,58 @@ test_that("ac_extract can treat missing documents as empty matches", {
   expect_equal(hits[[3]], data.frame(matches = character(), patterns = character()))
 })
 
+test_that("ac_extract_file returns matches and patterns per file", {
+  ac <- ac_build(c(greeting = "hello", object = "world"))
+  paths <- c(
+    a = tempfile(),
+    b = tempfile()
+  )
+  on.exit(unlink(paths), add = TRUE)
+  writeLines("hello world hello", paths[[1]])
+  writeLines("nothing", paths[[2]])
+
+  hits <- ac_extract_file(ac, paths)
+
+  expect_named(hits, names(paths))
+  expect_equal(
+    hits[[1]],
+    data.frame(
+      matches = c("hello", "world", "hello"),
+      patterns = c("hello", "world", "hello")
+    )
+  )
+  expect_equal(hits[[2]], data.frame(matches = character(), patterns = character()))
+})
+
+test_that("ac_extract_file keeps actual matched text", {
+  ac <- ac_build(c("abc", "你a😀"), ascii_case_insensitive = TRUE)
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("ABC 你a😀", path, useBytes = TRUE)
+
+  hits <- ac_extract_file(ac, path)
+
+  expect_equal(
+    hits[[1]],
+    data.frame(
+      matches = c("ABC", "你a😀"),
+      patterns = c("abc", "你a😀")
+    )
+  )
+})
+
+test_that("ac_extract_file errors when stream search is incompatible with match_kind", {
+  ac <- ac_build("hello", match_kind = "leftmost_first")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("hello", path)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_extract_file(ac, path)
+  )
+})
+
 test_that("ac_extract errors when overlapping search is incompatible with match_kind", {
   ac <- ac_build("hello", match_kind = "leftmost_first")
 

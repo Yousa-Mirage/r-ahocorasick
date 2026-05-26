@@ -105,6 +105,60 @@ ac_extract <- function(
   out
 }
 
+#' Extract pattern matches from files
+#'
+#' `ac_extract_file()` streams files from disk and returns one list element per
+#' file. Each element contains the matched text and the corresponding pattern
+#' values. Files are not read fully into R memory.
+#'
+#' Stream search is provided by the Rust `aho-corasick` crate and requires an
+#' automaton built with `match_kind = "standard"`.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param path A vector of file paths to search.
+#'
+#' @return A list with the same length as `path`. Each element is a data frame
+#'   with one row per match and two columns:
+#'  * `matches`: Text matched in the file.
+#'  * `patterns`: Pattern values corresponding to each match.
+#' @seealso [ac_extract()], [ac_detect_file()], [ac_count_file()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' path <- tempfile()
+#' writeLines("hello world", path)
+#' ac_extract_file(ac, path)
+#' @export
+ac_extract_file <- function(ac, path) {
+  ac <- validate_ac_automaton(ac)
+  ac <- validate_match_kind_for_file(ac)
+  path <- validate_stream_file_path(path)
+
+  out <- rep(list(new_extract_result()), length(path))
+  names(out) <- names(path)
+
+  raw <- rust_ac_extract_file(ac$ptr, unname(path))
+
+  if (length(raw$file_id) == 0L) {
+    return(out)
+  }
+
+  patterns <- unname(ac$patterns[raw$pattern_id])
+  runs <- rle(raw$file_id)
+  ends <- cumsum(runs$lengths)
+  starts <- ends - runs$lengths + 1L
+
+  for (i in seq_along(starts)) {
+    rows <- seq.int(starts[[i]], ends[[i]])
+    out[[runs$values[[i]]]] <- new_extract_result(
+      raw$matches[rows],
+      patterns[rows]
+    )
+  }
+
+  out
+}
+
 #' Extract pattern matches as a data frame
 #'
 #' `ac_extract_df()` is the data-frame form of [ac_extract()]. It is useful when

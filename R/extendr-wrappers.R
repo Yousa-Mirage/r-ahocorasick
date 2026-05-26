@@ -21,7 +21,11 @@ rust_ac_count <- function(ptr, doc, overlapping) .Call(wrap__rust_ac_count, ptr,
 
 rust_ac_count_file <- function(ptr, path) .Call(wrap__rust_ac_count_file, ptr, path)
 
+rust_ac_extract_file <- function(ptr, path) .Call(wrap__rust_ac_extract_file, ptr, path)
+
 rust_ac_replace <- function(ptr, doc, replace_with) .Call(wrap__rust_ac_replace, ptr, doc, replace_with)
+
+rust_ac_replace_file <- function(ptr, path, output, replace_with) .Call(wrap__rust_ac_replace_file, ptr, path, output, replace_with)
 
 rust_ac_info <- function(ptr) .Call(wrap__rust_ac_info, ptr)
 

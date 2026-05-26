@@ -39,28 +39,14 @@ ac_replace <- function(
   if (!checkmate::test_character(doc)) {
     cli::cli_abort("{.arg doc} must be a character vector.")
   }
-  if (!checkmate::test_character(replace_with, any.missing = FALSE)) {
-    cli::cli_abort(
-      "{.arg replace_with} must be a character vector with no missing values."
-    )
-  }
   na <- rlang::arg_match(na)
+  replace_with <- validate_replace_with(ac, replace_with)
 
-  if (!(length(replace_with) == 1L || length(replace_with) == length(ac))) {
-    cli::cli_abort(c(
-      "x" = "{.arg replace_with} must have length 1 or the same length as {.fn ac_patterns}.",
-      "i" = "Use one replacement for all patterns, or one replacement per pattern."
-    ))
-  }
   if (na == "error" && anyNA(doc)) {
     cli::cli_abort(c(
       "x" = "{.arg doc} must not contain missing values because {.arg na = \"error\"}.",
       "i" = "Use {.code na = \"keep\"} to keep missing values as {.code NA}."
     ))
-  }
-
-  if (length(replace_with) == 1L) {
-    replace_with <- rep(replace_with, length(ac))
   }
 
   out <- rep(ifelse(na == "empty", "", NA_character_), length(doc))
@@ -74,4 +60,144 @@ ac_replace <- function(
   }
 
   out
+}
+
+#' Replace pattern matches in files
+#'
+#' `ac_replace_file()` streams input files from disk, replaces all
+#' non-overlapping matches and writes the result to output files. Input files
+#' are not read fully into R memory.
+#'
+#' Stream replacement is provided by the Rust `aho-corasick` crate and requires
+#' an automaton built with `match_kind = "standard"`.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param path A vector of input file paths to search and replace.
+#' @param replace_with A character vector of replacements. If length 1, the
+#'   same replacement is used for every pattern. Otherwise, it **MUST** have the
+#'   same length as `ac_patterns(ac)`, and replacements are matched to patterns
+#'   by position.
+#' @param output A vector of output file paths. It must have the same
+#'   length as `path`. If `NULL`, output paths are created by adding
+#'   `"_replaced"` suffix. Existing output files are overwritten.
+#'
+#' @return A character vector of output file paths with the same length as
+#'   `path`.
+#' @seealso [ac_replace()], [ac_detect_file()], [ac_count_file()].
+#'
+#' @examples
+#' ac <- ac_build(c("fox", "brown", "quick"))
+#' path <- tempfile(fileext = ".txt")
+#' writeLines("The quick brown fox.", path)
+#' ac_replace_file(path = path, ac = ac, replace_with = c("sloth", "grey", "slow"))
+#' @export
+ac_replace_file <- function(
+  ac,
+  path,
+  replace_with,
+  output = NULL
+) {
+  ac <- validate_ac_automaton(ac)
+  ac <- validate_match_kind_for_file(ac)
+  path <- validate_stream_file_path(path)
+  replace_with <- validate_replace_with(ac, replace_with)
+  output <- validate_replace_output_path(path, output)
+
+  out <- rust_ac_replace_file(ac$ptr, unname(path), unname(output), replace_with)
+  names(out) <- names(path)
+  out
+}
+
+validate_replace_with <- function(ac, replace_with) {
+  if (!checkmate::test_character(replace_with, any.missing = FALSE)) {
+    cli::cli_abort(
+      "{.arg replace_with} must be a character vector with no missing values.",
+      call = rlang::caller_env()
+    )
+  }
+
+  if (!(length(replace_with) == 1L || length(replace_with) == length(ac))) {
+    cli::cli_abort(
+      c(
+        "x" = "{.arg replace_with} must have length 1 or the same length as {.fn ac_patterns}.",
+        "i" = "Use one replacement for all patterns, or one replacement per pattern."
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  if (length(replace_with) == 1L) {
+    replace_with <- rep(replace_with, length(ac))
+  }
+
+  enc2utf8(replace_with)
+}
+
+validate_replace_output_path <- function(path, output = NULL) {
+  if (is.null(output)) {
+    return(add_replaced_suffix(path))
+  }
+
+  if (!checkmate::test_character(output, any.missing = FALSE)) {
+    cli::cli_abort(
+      "{.arg output} must be a character vector with no missing values.",
+      call = rlang::caller_env()
+    )
+  }
+
+  if (length(output) != length(path)) {
+    cli::cli_abort(
+      "{.arg output} must have the same length as {.arg path}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  output <- normalize_output_path(output)
+  names(output) <- names(path)
+
+  checkmate::assert_path_for_output(output, overwrite = TRUE)
+
+  duplicated_output <- duplicated(output) | duplicated(output, fromLast = TRUE)
+  if (any(duplicated_output)) {
+    cli::cli_abort(
+      c(
+        "x" = "{.arg output} paths must be unique.",
+        "{.path {output[which(duplicated_output)]}}"
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  input_output_overlap <- output %in% normalize_output_path(path)
+  if (any(input_output_overlap)) {
+    cli::cli_abort(
+      c(
+        "x" = "{.arg output} must not be the same file as {.arg path}.",
+        "{.path {output[input_output_overlap]}}"
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  output
+}
+
+add_replaced_suffix <- function(path) {
+  file <- fs::path_file(path)
+  ext <- fs::path_ext(file)
+  stem <- fs::path_ext_remove(file)
+
+  replaced_file <- paste0(stem, "_replaced")
+
+  replaced_file <- ifelse(
+    nzchar(ext),
+    fs::path_ext_set(replaced_file, ext),
+    replaced_file
+  )
+  fs::path(fs::path_dir(path), replaced_file)
+}
+
+normalize_output_path <- function(path) {
+  path <- enc2utf8(path)
+  fs::path_abs(path)
 }

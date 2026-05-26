@@ -1,5 +1,7 @@
 # ahocorasick (development version)
 
+- Add streamed file APIs `ac_*_file()`.
+
 # ahocorasick 0.1.0
 
 Initial CRAN submission.

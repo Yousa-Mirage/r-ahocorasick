@@ -80,6 +80,92 @@ test_that("ac_replace matches duplicate pattern indexes", {
   )
 })
 
+test_that("ac_replace_file writes default output paths", {
+  ac <- ac_build(c("fox", "brown", "quick"))
+  path <- tempfile(fileext = ".txt")
+  on.exit(unlink(c(path, tools::file_path_sans_ext(path) |> paste0("_replaced.txt"))), add = TRUE)
+  writeLines("The quick brown fox.", path)
+
+  output <- ac_replace_file(ac, path, c("sloth", "grey", "slow"))
+
+  expect_equal(output, paste0(tools::file_path_sans_ext(path), "_replaced.txt"))
+  expect_equal(readLines(output), "The slow grey sloth.")
+})
+
+test_that("ac_replace_file writes explicit output paths", {
+  ac <- ac_build(c("hello", "world"))
+  paths <- c(
+    a = tempfile(),
+    b = tempfile()
+  )
+  outputs <- c(
+    a = tempfile(),
+    b = tempfile()
+  )
+  on.exit(unlink(c(paths, outputs)), add = TRUE)
+  writeLines("hello world", paths[[1]])
+  writeLines("nothing", paths[[2]])
+
+  result <- ac_replace_file(ac, paths, "x", output = outputs)
+
+  expect_named(result, names(paths))
+  expect_equal(unname(result), normalizePath(outputs, mustWork = FALSE))
+  expect_equal(readLines(outputs[[1]]), "x x")
+  expect_equal(readLines(outputs[[2]]), "nothing")
+})
+
+test_that("ac_replace_file supports UTF-8 matching", {
+  ac <- ac_build(c("世界", "😀"))
+  path <- tempfile(fileext = ".txt")
+  output <- tempfile(fileext = ".txt")
+  on.exit(unlink(c(path, output)), add = TRUE)
+  writeLines("你好世界😀", path, useBytes = TRUE)
+
+  ac_replace_file(ac, path, c("world", "smile"), output = output)
+
+  expect_equal(readLines(output), "你好worldsmile")
+})
+
+test_that("ac_replace_file errors when output is the input file", {
+  ac <- ac_build("hello")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("hello", path)
+
+  expect_snapshot(
+    error = TRUE,
+    transform = function(x) {
+      gsub(normalizePath(path, mustWork = FALSE), "<input-file>", x, fixed = TRUE)
+    },
+    ac_replace_file(ac, path, "x", output = path)
+  )
+})
+
+test_that("ac_replace_file errors on invalid output paths", {
+  ac <- ac_build("hello")
+  paths <- c(tempfile(), tempfile())
+  on.exit(unlink(paths), add = TRUE)
+  writeLines("hello", paths[[1]])
+  writeLines("world", paths[[2]])
+
+  expect_snapshot(
+    error = TRUE,
+    ac_replace_file(ac, paths, "x", output = tempfile())
+  )
+})
+
+test_that("ac_replace_file errors when stream search is incompatible with match_kind", {
+  ac <- ac_build("hello", match_kind = "leftmost_longest")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("hello", path)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_replace_file(ac, path, "x")
+  )
+})
+
 test_that("ac_replace errors on invalid replacements", {
   ac <- ac_build(c("hello", "world"))
 

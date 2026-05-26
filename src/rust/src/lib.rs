@@ -1,6 +1,7 @@
 mod offsets;
 
 use std::fs::File;
+use std::io::{self, BufWriter};
 
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, MatchKind};
 use extendr_api::prelude::*;
@@ -370,6 +371,53 @@ fn rust_ac_count_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Resul
     Ok(out)
 }
 
+// Return matched text and pattern ids for each file.
+#[extendr]
+fn rust_ac_extract_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<List> {
+    let automaton = ptr.try_addr()?;
+
+    let mut out_file_id = Vec::new();
+    let mut out_pattern_id = Vec::new();
+    let mut out_matches = Vec::new();
+
+    for (file_index, file_path) in path.iter().enumerate() {
+        let file_id = (file_index + 1) as i32;
+        let file = File::open(file_path)
+            .map_err(|err| Error::Other(format!("failed to open `{file_path}`: {err}")))?;
+
+        automaton
+            .ac
+            .try_stream_replace_all_with(file, io::sink(), |mat, matched_bytes, _wtr| {
+                let pattern_id = mat.pattern().as_usize() + 1;
+                let matched = std::str::from_utf8(matched_bytes)
+                    .map_err(|err| {
+                        io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            format!("matched bytes are not UTF-8: {err}"),
+                        )
+                    })?
+                    .to_owned();
+
+                out_file_id.push(file_id);
+                out_pattern_id.push(pattern_id);
+                out_matches.push(matched);
+
+                Ok(())
+            })
+            .map_err(|err| {
+                Error::Other(format!("failed to stream extract `{file_path}`: {err}"))
+            })?;
+    }
+
+    let list = list!(
+        file_id = out_file_id,
+        pattern_id = out_pattern_id,
+        matches = out_matches
+    );
+
+    Ok(list)
+}
+
 // Replace non-overlapping matches in each haystack.
 #[extendr]
 fn rust_ac_replace(
@@ -389,6 +437,32 @@ fn rust_ac_replace(
     }
 
     Ok(out)
+}
+
+// Stream input files, replace non-overlapping matches and write output files.
+#[extendr]
+fn rust_ac_replace_file(
+    ptr: ExternalPtr<AcAutomaton>,
+    path: Vec<String>,
+    output: Vec<String>,
+    replace_with: Vec<String>,
+) -> Result<Vec<String>> {
+    let automaton = ptr.try_addr()?;
+
+    for (input_path, output_path) in path.iter().zip(output.iter()) {
+        let input = File::open(input_path)
+            .map_err(|err| Error::Other(format!("failed to open `{input_path}`: {err}")))?;
+        let output_file = File::create(output_path)
+            .map_err(|err| Error::Other(format!("failed to create `{output_path}`: {err}")))?;
+        let mut writer = BufWriter::new(output_file);
+
+        automaton
+            .ac
+            .try_stream_replace_all(input, &mut writer, &replace_with)
+            .map_err(|err| Error::Other(err.to_string()))?;
+    }
+
+    Ok(output)
 }
 
 // Return automaton metadata.
@@ -419,7 +493,9 @@ extendr_module! {
     fn rust_ac_detect_file;
     fn rust_ac_count;
     fn rust_ac_count_file;
+    fn rust_ac_extract_file;
     fn rust_ac_replace;
+    fn rust_ac_replace_file;
     fn rust_ac_info;
     fn rust_ac_is_valid;
 }
