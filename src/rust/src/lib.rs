@@ -1,5 +1,7 @@
 mod offsets;
 
+use std::fs::File;
+
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, MatchKind};
 use extendr_api::prelude::*;
 use extendr_api::Result;
@@ -286,6 +288,31 @@ fn rust_ac_detect(ptr: ExternalPtr<AcAutomaton>, doc: Vec<String>) -> Result<Vec
     Ok(out)
 }
 
+// Return whether each file has at least one match using stream search.
+#[extendr]
+fn rust_ac_detect_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<Vec<bool>> {
+    let automaton = ptr.try_addr()?;
+    let mut out = Vec::with_capacity(path.len());
+
+    for file_path in &path {
+        let file = File::open(file_path)
+            .map_err(|err| Error::Other(format!("failed to open `{file_path}`: {err}")))?;
+        let mut matches = automaton
+            .ac
+            .try_stream_find_iter(file)
+            .map_err(|err| Error::Other(err.to_string()))?;
+
+        let detected = match matches.next() {
+            Some(Ok(_)) => true,
+            Some(Err(err)) => return Err(Error::Other(err.to_string())),
+            None => false,
+        };
+        out.push(detected);
+    }
+
+    Ok(out)
+}
+
 // Return the number of matches in each haystack.
 #[extendr]
 fn rust_ac_count(
@@ -310,6 +337,32 @@ fn rust_ac_count(
                 .map_err(|err| Error::Other(err.to_string()))?;
             matches.count()
         };
+
+        out.push(count as i32);
+    }
+
+    Ok(out)
+}
+
+// Return the number of non-overlapping stream matches in each file.
+#[extendr]
+fn rust_ac_count_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<Vec<i32>> {
+    let automaton = ptr.try_addr()?;
+    let mut out = Vec::with_capacity(path.len());
+
+    for file_path in &path {
+        let file = File::open(file_path)
+            .map_err(|err| Error::Other(format!("failed to open `{file_path}`: {err}")))?;
+        let matches = automaton
+            .ac
+            .try_stream_find_iter(file)
+            .map_err(|err| Error::Other(err.to_string()))?;
+
+        let mut count = 0usize;
+        for mat in matches {
+            mat.map_err(|err| Error::Other(err.to_string()))?;
+            count += 1;
+        }
 
         out.push(count as i32);
     }
@@ -363,7 +416,9 @@ extendr_module! {
     fn rust_ac_locate_bytes;
     fn rust_ac_extract;
     fn rust_ac_detect;
+    fn rust_ac_detect_file;
     fn rust_ac_count;
+    fn rust_ac_count_file;
     fn rust_ac_replace;
     fn rust_ac_info;
     fn rust_ac_is_valid;

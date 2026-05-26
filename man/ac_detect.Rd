@@ -29,5 +29,5 @@ if (requireNamespace("dplyr", quietly = TRUE)) {
 }
 }
 \seealso{
-\code{\link[=ac_count]{ac_count()}}, \code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_extract]{ac_extract()}}.
+\code{\link[=ac_detect_file]{ac_detect_file()}}, \code{\link[=ac_count]{ac_count()}}, \code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_extract]{ac_extract()}}.
 }

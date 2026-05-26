@@ -9,7 +9,7 @@
 #'   fails.
 #'
 #' @return A logical vector with the same length as `doc`.
-#' @seealso [ac_count()], [ac_locate()], [ac_extract()].
+#' @seealso [ac_detect_file()], [ac_count()], [ac_locate()], [ac_extract()].
 #'
 #' @examples
 #' if (requireNamespace("dplyr", quietly = TRUE)) {
@@ -49,6 +49,36 @@ ac_detect <- function(
   out
 }
 
+#' Detect pattern matches in files
+#'
+#' `ac_detect_file()` streams files from disk and returns whether each file has
+#' at least one pattern match. Files are not read fully into R memory.
+#'
+#' Stream search is provided by the Rust `aho-corasick` crate and requires an
+#' automaton built with `match_kind = "standard"`.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param path A character vector of file paths to search.
+#'
+#' @return A logical vector with the same length as `path`.
+#' @seealso [ac_detect()], [ac_count_file()], [ac_locate_bytes()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' path <- tempfile()
+#' writeLines("hello world", path)
+#' ac_detect_file(ac, path)
+#' @export
+ac_detect_file <- function(ac, path) {
+  ac <- validate_ac_automaton(ac)
+  ac <- validate_match_kind(ac)
+  path <- validate_stream_file_path(path)
+
+  out <- rust_ac_detect_file(ac$ptr, unname(path))
+  names(out) <- names(path)
+  out
+}
+
 #' Count pattern matches in documents
 #'
 #' `ac_count()` returns the number of pattern matches in each document.
@@ -63,7 +93,7 @@ ac_detect <- function(
 #'   fails.
 #'
 #' @return An integer vector with the same length as `doc`.
-#' @seealso [ac_detect()], [ac_locate()], [ac_extract()].
+#' @seealso [ac_count_file()], [ac_detect()], [ac_locate()], [ac_extract()].
 #'
 #' @examples
 #' if (requireNamespace("dplyr", quietly = TRUE)) {
@@ -112,4 +142,59 @@ ac_count <- function(
   }
 
   out
+}
+
+#' Count pattern matches in files
+#'
+#' `ac_count_file()` streams files from disk and returns the number of
+#' non-overlapping pattern matches in each file. Files are not read fully into R
+#' memory.
+#'
+#' Stream search is provided by the Rust `aho-corasick` crate and requires an
+#' automaton built with `match_kind = "standard"`.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param path A character vector of file paths to search.
+#'
+#' @return An integer vector with the same length as `path`.
+#' @seealso [ac_count()], [ac_detect_file()], [ac_locate_bytes()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' path <- tempfile()
+#' writeLines("hello hello world", path)
+#' ac_count_file(ac, path)
+#' @export
+ac_count_file <- function(ac, path) {
+  ac <- validate_ac_automaton(ac)
+  ac <- validate_match_kind(ac)
+  path <- validate_stream_file_path(path)
+
+  out <- rust_ac_count_file(ac$ptr, unname(path))
+  names(out) <- names(path)
+  out
+}
+
+validate_stream_file_path <- function(path) {
+  if (!checkmate::test_character(path, any.missing = FALSE)) {
+    cli::cli_abort(
+      "{.arg path} must be a character vector with no missing values.",
+      call = rlang::caller_env()
+    )
+  }
+
+  enc2utf8(path)
+}
+
+validate_match_kind <- function(ac_automaton) {
+  if (ac_automaton$info$match_kind != "standard") {
+    cli::cli_abort(
+      c(
+        "File stream search requires {.code match_kind = \"standard\"}.",
+        "i" = "Rebuild the automaton with {.code match_kind = \"standard\"} to search files."
+      ),
+      call = rlang::caller_env()
+    )
+  }
+  ac_automaton
 }

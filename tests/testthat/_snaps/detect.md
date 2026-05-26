@@ -1,3 +1,20 @@
+# ac_detect_file errors when stream search is incompatible with match_kind
+
+    Code
+      ac_detect_file(ac, path)
+    Condition
+      Error in `ac_detect_file()`:
+      ! File stream search requires `match_kind = "standard"`.
+      i Rebuild the automaton with `match_kind = "standard"` to search files.
+
+# ac_detect_file errors on missing paths
+
+    Code
+      ac_detect_file(ac, c("file.txt", NA_character_))
+    Condition
+      Error in `ac_detect_file()`:
+      ! `path` must be a character vector with no missing values.
+
 # ac_detect errors when missing documents are disallowed
 
     Code

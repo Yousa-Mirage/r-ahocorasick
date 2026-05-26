@@ -33,5 +33,5 @@ if (requireNamespace("dplyr", quietly = TRUE)) {
 }
 }
 \seealso{
-\code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_extract]{ac_extract()}}.
+\code{\link[=ac_count_file]{ac_count_file()}}, \code{\link[=ac_detect]{ac_detect()}}, \code{\link[=ac_locate]{ac_locate()}}, \code{\link[=ac_extract]{ac_extract()}}.
 }
