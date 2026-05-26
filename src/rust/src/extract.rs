@@ -57,7 +57,7 @@ pub fn rust_ac_extract_file(
     let mut out_matches = Vec::new();
 
     for (file_index, file_path) in path.iter().enumerate() {
-        let file_id = file_index + 1;
+        let file_id = (file_index + 1) as i32;
         let haystack = fs::read_to_string(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
 
@@ -104,7 +104,7 @@ pub fn rust_ac_extract_file_stream(
         automaton
             .ac
             .try_stream_replace_all_with(file, io::sink(), |mat, matched_bytes, _wtr| {
-                let pattern_id = mat.pattern().as_usize() + 1;
+                let pattern_id = mat.pattern().as_i32() + 1;
                 let matched = std::str::from_utf8(matched_bytes)
                     .map_err(|err| {
                         io::Error::new(

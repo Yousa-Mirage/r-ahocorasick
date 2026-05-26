@@ -162,7 +162,9 @@ validate_replace_output_path <- function(path, output = NULL) {
   output <- normalize_output_path(output)
   names(output) <- names(path)
 
-  checkmate::assert_path_for_output(output, overwrite = TRUE)
+  for (out in output) {
+    checkmate::assert_path_for_output(out, overwrite = TRUE)
+  }
 
   duplicated_output <- duplicated(output) | duplicated(output, fromLast = TRUE)
   if (any(duplicated_output)) {

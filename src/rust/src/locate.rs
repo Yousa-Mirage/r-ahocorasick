@@ -103,7 +103,7 @@ pub fn rust_ac_locate_file(
     let mut out_end = Vec::new();
 
     for (file_index, file_path) in path.iter().enumerate() {
-        let file_id = file_index + 1;
+        let file_id = (file_index + 1) as i32;
         let haystack = fs::read_to_string(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
 

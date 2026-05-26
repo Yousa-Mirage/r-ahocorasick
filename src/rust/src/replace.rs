@@ -1,5 +1,5 @@
 use std::fs::{self, File};
-use std::io::BufWriter;
+use std::io::{BufWriter, Write};
 
 use extendr_api::prelude::*;
 use extendr_api::Result;
@@ -72,6 +72,9 @@ pub fn rust_ac_replace_file_stream(
             .ac
             .try_stream_replace_all(input, &mut writer, &replace_with)
             .map_err(|err| Error::Other(err.to_string()))?;
+        writer
+            .flush()
+            .map_err(|err| Error::Other(format!("failed to flush `{output_path}`: {err}")))?;
     }
 
     Ok(output)
