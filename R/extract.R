@@ -105,6 +105,70 @@ ac_extract <- function(
   out
 }
 
+#' Extract pattern matches from files
+#'
+#' `ac_extract_file()` returns one list element per file. Each element contains
+#' the matched text and the corresponding pattern values.
+#'
+#' @param ac An `<ac_automaton>` object created by `ac_build()`.
+#' @param path A vector of file paths to search.
+#' @param stream If `FALSE` (default), each file is read into memory before
+#'   searching. If `TRUE`, files are searched as streams. Stream search requires
+#'   an automaton built with `match_kind = "standard"`.
+#' @param overlapping Default is `FALSE`. If `TRUE`, extract overlapping
+#'   matches. This is only supported when `stream = FALSE` and `ac` was built
+#'   with `match_kind = "standard"`.
+#'
+#' @return A list with the same length as `path`. Each element is a data frame
+#'   with one row per match and two columns:
+#'  * `matches`: Text matched in the file.
+#'  * `patterns`: Pattern values corresponding to each match.
+#' @seealso [ac_extract()], [ac_detect_file()], [ac_count_file()].
+#'
+#' @examples
+#' ac <- ac_build(c("hello", "world"))
+#' path <- tempfile()
+#' writeLines("hello world", path)
+#' ac_extract_file(ac, path)
+#' @export
+ac_extract_file <- function(ac, path, stream = FALSE, overlapping = FALSE) {
+  ac <- validate_ac_automaton(ac)
+  stream <- validate_file_stream(stream)
+  overlapping <- validate_file_overlapping(ac, overlapping, stream)
+  if (stream) {
+    ac <- validate_match_kind_for_file(ac)
+  }
+  path <- validate_stream_file_path(path)
+
+  out <- rep(list(new_extract_result()), length(path))
+  names(out) <- names(path)
+
+  raw <- if (stream) {
+    rust_ac_extract_file_stream(ac$ptr, unname(path))
+  } else {
+    rust_ac_extract_file(ac$ptr, unname(path), overlapping)
+  }
+
+  if (length(raw$file_id) == 0L) {
+    return(out)
+  }
+
+  patterns <- unname(ac$patterns[raw$pattern_id])
+  runs <- rle(raw$file_id)
+  ends <- cumsum(runs$lengths)
+  starts <- ends - runs$lengths + 1L
+
+  for (i in seq_along(starts)) {
+    rows <- seq.int(starts[[i]], ends[[i]])
+    out[[runs$values[[i]]]] <- new_extract_result(
+      raw$matches[rows],
+      patterns[rows]
+    )
+  }
+
+  out
+}
+
 #' Extract pattern matches as a data frame
 #'
 #' `ac_extract_df()` is the data-frame form of [ac_extract()]. It is useful when

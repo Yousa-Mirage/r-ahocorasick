@@ -80,6 +80,113 @@ test_that("ac_replace matches duplicate pattern indexes", {
   )
 })
 
+test_that("ac_replace_file writes default output paths", {
+  ac <- ac_build(c("fox", "brown", "quick"))
+  path <- tempfile(fileext = ".txt")
+  writeLines("The quick brown fox.", path)
+
+  output <- ac_replace_file(ac, path, c("sloth", "grey", "slow"))
+  on.exit(unlink(c(path, output)), add = TRUE)
+
+  expect_equal(fs::path_real(fs::path_dir(output)), fs::path_real(fs::path_dir(path)))
+  expect_equal(
+    fs::path_file(output),
+    paste0(tools::file_path_sans_ext(fs::path_file(path)), "_replaced.txt")
+  )
+  expect_equal(readLines(output), "The slow grey sloth.")
+})
+
+test_that("ac_replace_file writes explicit output paths", {
+  ac <- ac_build(c("hello", "world"))
+  paths <- c(
+    a = tempfile(),
+    b = tempfile()
+  )
+  outputs <- c(
+    a = tempfile(),
+    b = tempfile()
+  )
+  on.exit(unlink(c(paths, outputs)), add = TRUE)
+  writeLines("hello world", paths[[1]])
+  writeLines("nothing", paths[[2]])
+
+  result <- ac_replace_file(ac, paths, "x", output = outputs)
+
+  expect_named(result, names(paths))
+  expect_equal(fs::path_real(fs::path_dir(unname(result))), fs::path_real(fs::path_dir(outputs)))
+  expect_equal(fs::path_file(unname(result)), fs::path_file(outputs))
+  expect_equal(readLines(outputs[[1]]), "x x")
+  expect_equal(readLines(outputs[[2]]), "nothing")
+})
+
+test_that("ac_replace_file supports UTF-8 matching", {
+  ac <- ac_build(c("世界", "😀"))
+  path <- tempfile(fileext = ".txt")
+  output <- tempfile(fileext = ".txt")
+  stream_output <- tempfile(fileext = ".txt")
+  on.exit(unlink(c(path, output, stream_output)), add = TRUE)
+  writeLines("你好世界😀", path, useBytes = TRUE)
+
+  ac_replace_file(ac, path, c("world", "smile"), output = output)
+  ac_replace_file(ac, path, c("world", "smile"), output = stream_output, stream = TRUE)
+
+  expect_equal(readLines(output), "你好worldsmile")
+  expect_equal(readLines(stream_output), "你好worldsmile")
+})
+
+test_that("ac_replace_file supports leftmost match kinds without streaming", {
+  ac <- ac_build(
+    c("append", "appendage", "app"),
+    match_kind = "leftmost_longest"
+  )
+  path <- tempfile()
+  output <- tempfile()
+  on.exit(unlink(c(path, output)), add = TRUE)
+  writeLines("append the app to the appendage", path)
+
+  ac_replace_file(ac, path, c("x", "y", "z"), output = output)
+
+  expect_equal(readLines(output), "x the z to the y")
+})
+
+test_that("ac_replace_file errors when output is the input file", {
+  ac <- ac_build("hello")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("hello", path)
+
+  expect_error(
+    ac_replace_file(ac, path, "x", output = path),
+    "`output` must not be the same file as `path`",
+    fixed = TRUE
+  )
+})
+
+test_that("ac_replace_file errors on invalid output paths", {
+  ac <- ac_build("hello")
+  paths <- c(tempfile(), tempfile())
+  on.exit(unlink(paths), add = TRUE)
+  writeLines("hello", paths[[1]])
+  writeLines("world", paths[[2]])
+
+  expect_snapshot(
+    error = TRUE,
+    ac_replace_file(ac, paths, "x", output = tempfile())
+  )
+})
+
+test_that("ac_replace_file errors when stream search is incompatible with match_kind", {
+  ac <- ac_build("hello", match_kind = "leftmost_longest")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("hello", path)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_replace_file(ac, path, "x", stream = TRUE)
+  )
+})
+
 test_that("ac_replace errors on invalid replacements", {
   ac <- ac_build(c("hello", "world"))
 

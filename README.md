@@ -53,7 +53,7 @@ Install the released version from R-universe/R-multiverse:
 ``` r
 install.packages("ahocorasick", repos = "https://yousa-mirage.r-universe.dev")
 # or
-# install.packages("ahocorasick", repos = "https://community.r-multiverse.org")
+install.packages("ahocorasick", repos = "https://community.r-multiverse.org")
 ```
 
 Install the development version from source. You need Cargo and `rustc`
@@ -231,6 +231,44 @@ ac_leftmost <- ac_build(
 ac_replace(ac_leftmost, "append the app to the appendage", c("x", "y", "z"))
 #> [1] "x the z to the xage"
 ```
+
+### Searching Files
+
+The `ac_*_file()` family applies the same automaton to one or more
+files. Pass a vector of file paths and each function returns results
+aligned with those files.
+
+``` r
+ac_files <- ac_build(c("hello", "world"))
+paths <- c(tempfile(fileext = ".txt"), tempfile(fileext = ".txt"))
+writeLines("hello world", paths[[1]])
+writeLines("fish and chips", paths[[2]])
+
+ac_detect_file(ac_files, paths)
+#> [1]  TRUE FALSE
+ac_count_file(ac_files, paths)
+#> [1] 2 0
+ac_extract_file(ac_files, paths)
+#> [[1]]
+#>   matches patterns
+#> 1   hello    hello
+#> 2   world    world
+#> 
+#> [[2]]
+#> [1] matches  patterns
+#> <0 rows> (or 0-length row.names)
+```
+
+`ac_detect_file()`, `ac_count_file()`, `ac_extract_file()`, and
+`ac_replace_file()` support `stream = TRUE` when the automaton was built
+with the default `match_kind = "standard"`. This is useful for large
+files when you want to avoid reading the whole file into memory at once.
+
+`ac_locate_file()` does not support `stream = TRUE`. It returns R
+character offsets instead of raw byte offsets, and converting streamed
+byte positions back into character positions would require another pass
+over the file. Keeping file location search non-streaming makes the
+behavior simpler and easier to reason about.
 
 ### Using With Tidyverse
 

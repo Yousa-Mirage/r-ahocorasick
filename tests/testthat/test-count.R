@@ -40,6 +40,109 @@ test_that("ac_count follows leftmost match semantics", {
   expect_equal(ac_count(ac, "discontent"), 1L)
 })
 
+test_that("ac_count_file returns the number of matches per file", {
+  ac <- ac_build(c("hello", "world"))
+  paths <- c(
+    a = tempfile(),
+    b = tempfile(),
+    c = tempfile()
+  )
+  on.exit(unlink(paths), add = TRUE)
+  writeLines("hello hello world", paths[[1]])
+  writeLines("nothing", paths[[2]])
+  writeLines("world", paths[[3]])
+
+  expect_equal(
+    ac_count_file(ac, paths),
+    c(a = 3L, b = 0L, c = 1L)
+  )
+})
+
+test_that("ac_count_file supports UTF-8 matching", {
+  ac <- ac_build("把把")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("一把把把把住了", path, useBytes = TRUE)
+
+  expect_equal(ac_count_file(ac, path), 2L)
+  expect_equal(ac_count_file(ac, path, overlapping = TRUE), 3L)
+  expect_equal(ac_count_file(ac, path, stream = TRUE), 2L)
+})
+
+test_that("ac_count_file validates overlapping file search", {
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("ababa", path)
+
+  ac_standard <- ac_build("aba")
+  expect_equal(ac_count_file(ac_standard, path), 1L)
+  expect_equal(ac_count_file(ac_standard, path, overlapping = TRUE), 2L)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_count_file(ac_standard, path, stream = TRUE, overlapping = TRUE)
+  )
+
+  ac_leftmost <- ac_build("aba", match_kind = "leftmost_longest")
+  expect_snapshot(
+    error = TRUE,
+    ac_count_file(ac_leftmost, path, overlapping = TRUE)
+  )
+})
+
+test_that("ac_count_file supports leftmost match kinds without streaming", {
+  ac <- ac_build(
+    c("append", "appendage", "app"),
+    match_kind = "leftmost_longest"
+  )
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("appendage app", path)
+
+  expect_equal(ac_count_file(ac, path), 2L)
+})
+
+test_that("ac_count_file errors when stream search is incompatible with match_kind", {
+  ac <- ac_build("hello", match_kind = "leftmost_longest")
+  path <- tempfile()
+  on.exit(unlink(path), add = TRUE)
+  writeLines("hello", path)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_count_file(ac, path, stream = TRUE)
+  )
+})
+
+test_that("ac_count_file errors on missing paths", {
+  ac <- ac_build("hello")
+
+  expect_snapshot(
+    error = TRUE,
+    ac_count_file(ac, c("file.txt", NA_character_))
+  )
+})
+
+test_that("ac_count_file errors when a file does not exist", {
+  ac <- ac_build("hello")
+
+  expect_error(
+    ac_count_file(ac, "definitely-missing-ahocorasick-file.txt"),
+    "The following paths don't exist",
+    fixed = TRUE
+  )
+})
+
+test_that("ac_count_file errors when path is not a file", {
+  ac <- ac_build("hello")
+
+  expect_error(
+    ac_count_file(ac, "."),
+    "The following paths are not files",
+    fixed = TRUE
+  )
+})
+
 test_that("ac_count errors when overlapping search is incompatible with match_kind", {
   ac <- ac_build("hello", match_kind = "leftmost_first")
 

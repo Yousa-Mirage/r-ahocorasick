@@ -1,3 +1,12 @@
+# ac_locate_file errors when overlapping search is incompatible with match_kind
+
+    Code
+      ac_locate_file(ac, path, overlapping = TRUE)
+    Condition
+      Error in `ac_locate_file()`:
+      ! `overlapping = TRUE` requires `match_kind = "standard"`.
+      i Rebuild the automaton with `match_kind = "standard"` to enable overlapping file search.
+
 # ac_locate errors when overlapping search is incompatible with match_kind
 
     Code

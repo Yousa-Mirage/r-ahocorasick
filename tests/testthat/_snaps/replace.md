@@ -1,3 +1,20 @@
+# ac_replace_file errors on invalid output paths
+
+    Code
+      ac_replace_file(ac, paths, "x", output = tempfile())
+    Condition
+      Error in `ac_replace_file()`:
+      ! `output` must have the same length as `path`.
+
+# ac_replace_file errors when stream search is incompatible with match_kind
+
+    Code
+      ac_replace_file(ac, path, "x", stream = TRUE)
+    Condition
+      Error in `ac_replace_file()`:
+      ! File stream search requires `match_kind = "standard"`.
+      i Rebuild the automaton with `match_kind = "standard"` to search files.
+
 # ac_replace errors on invalid replacements
 
     Code

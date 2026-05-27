@@ -82,3 +82,110 @@ compact_rows <- function(rows, empty) {
   row.names(out) <- NULL
   out
 }
+
+validate_stream_file_path <- function(path) {
+  if (!checkmate::test_character(path, any.missing = FALSE)) {
+    cli::cli_abort(
+      "{.arg path} must be a character vector with no missing values.",
+      call = rlang::caller_env()
+    )
+  }
+
+  path_names <- names(path)
+  path <- normalizePath(enc2utf8(path), mustWork = FALSE)
+  names(path) <- path_names
+
+  file_exists <- fs::file_info(path)$type == "file"
+
+  if (anyNA(file_exists)) {
+    unexisting_files <- path[which(is.na(file_exists))]
+    cli::cli_abort(
+      c(
+        "x" = "The following paths don't exist:",
+        "{.path {unexisting_files}}"
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  if (!all(file_exists)) {
+    non_file_paths <- path[which(!file_exists)]
+    cli::cli_abort(
+      c(
+        "x" = "The following paths are not files:",
+        "{.path {non_file_paths}}"
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  file_readable <- fs::file_access(path, "read")
+
+  if (!all(file_readable)) {
+    unreadable_files <- path[which(!file_readable)]
+    cli::cli_abort(
+      c(
+        "x" = "Files are not readable:",
+        "{.path {unreadable_files}}"
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  path
+}
+
+validate_file_stream <- function(stream) {
+  if (!checkmate::test_flag(stream)) {
+    cli::cli_abort(
+      "{.arg stream} must be a logical value.",
+      call = rlang::caller_env()
+    )
+  }
+
+  stream
+}
+
+validate_match_kind_for_file <- function(ac_automaton) {
+  if (ac_automaton$info$match_kind != "standard") {
+    cli::cli_abort(
+      c(
+        "File stream search requires {.code match_kind = \"standard\"}.",
+        "i" = "Rebuild the automaton with {.code match_kind = \"standard\"} to search files."
+      ),
+      call = rlang::caller_env()
+    )
+  }
+  ac_automaton
+}
+
+validate_file_overlapping <- function(ac_automaton, overlapping, stream = FALSE) {
+  if (!checkmate::test_flag(overlapping)) {
+    cli::cli_abort(
+      "{.arg overlapping} must be a logical value.",
+      call = rlang::caller_env()
+    )
+  }
+
+  if (overlapping && stream) {
+    cli::cli_abort(
+      c(
+        "{.code overlapping = TRUE} is only supported when {.code stream = FALSE}.",
+        "i" = "Use the default non-streaming file search to enable overlapping search."
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  if (overlapping && ac_automaton$info$match_kind != "standard") {
+    cli::cli_abort(
+      c(
+        "{.code overlapping = TRUE} requires {.code match_kind = \"standard\"}.",
+        "i" = "Rebuild the automaton with {.code match_kind = \"standard\"} to enable overlapping file search."
+      ),
+      call = rlang::caller_env()
+    )
+  }
+
+  overlapping
+}

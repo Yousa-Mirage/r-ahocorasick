@@ -27,6 +27,92 @@ test_that("ac_locate returns pattern ids and offsets per document", {
   )
 })
 
+test_that("ac_locate_file returns pattern ids and offsets per file", {
+  ac <- ac_build(c("hello", "world"))
+  path <- c(
+    first = tempfile(fileext = ".txt"),
+    second = tempfile(fileext = ".txt"),
+    third = tempfile(fileext = ".txt")
+  )
+  on.exit(unlink(path), add = TRUE)
+
+  writeBin(charToRaw(enc2utf8("你好hello世界")), path[[1]])
+  writeBin(charToRaw(enc2utf8("world hello")), path[[2]])
+  writeBin(charToRaw(enc2utf8("nothing")), path[[3]])
+
+  hits <- ac_locate_file(ac, path)
+
+  expect_named(hits, names(path))
+  expect_equal(hits[[1]], data.frame(pattern_id = 1L, start = 3L, end = 7L))
+  expect_equal(
+    hits[[2]],
+    data.frame(
+      pattern_id = c(2L, 1L),
+      start = c(1L, 7L),
+      end = c(5L, 11L)
+    )
+  )
+  expect_equal(
+    hits[[3]],
+    data.frame(pattern_id = integer(), start = integer(), end = integer())
+  )
+})
+
+test_that("ac_locate_file supports leftmost match kinds without streaming", {
+  ac <- ac_build(
+    c("disco", "disc", "discontent"),
+    match_kind = "leftmost_longest"
+  )
+  path <- tempfile(fileext = ".txt")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(charToRaw("discontent"), path)
+
+  expect_equal(
+    ac_locate_file(ac, path)[[1]],
+    data.frame(
+      pattern_id = 3L,
+      start = 1L,
+      end = 10L
+    )
+  )
+})
+
+test_that("ac_locate_file supports overlapping matches", {
+  ac <- ac_build(c("aba", "bab"))
+  path <- tempfile(fileext = ".txt")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(charToRaw("ababa"), path)
+
+  expect_equal(
+    ac_locate_file(ac, path)[[1]],
+    data.frame(
+      pattern_id = 1L,
+      start = 1L,
+      end = 3L
+    )
+  )
+  expect_equal(
+    ac_locate_file(ac, path, overlapping = TRUE)[[1]],
+    data.frame(
+      pattern_id = c(1L, 2L, 1L),
+      start = c(1L, 2L, 3L),
+      end = c(3L, 4L, 5L)
+    )
+  )
+})
+
+test_that("ac_locate_file errors when overlapping search is incompatible with match_kind", {
+  ac <- ac_build("hello", match_kind = "leftmost_first")
+  path <- tempfile(fileext = ".txt")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(charToRaw("hello"), path)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_locate_file(ac, path, overlapping = TRUE)
+  )
+})
+
 test_that("ac_locate_df returns one row per match", {
   ac <- ac_build(c("hello", "world"))
   doc <- c("hello world", NA_character_, "world hello", "nothing")
