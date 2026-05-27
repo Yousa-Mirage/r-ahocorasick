@@ -159,12 +159,12 @@ validate_replace_output_path <- function(path, output = NULL) {
     )
   }
 
-  output <- normalize_output_path(output)
-  names(output) <- names(path)
-
   for (out in output) {
     checkmate::assert_path_for_output(out, overwrite = TRUE)
   }
+
+  output <- normalize_output_path(output)
+  names(output) <- names(path)
 
   duplicated_output <- duplicated(output) | duplicated(output, fromLast = TRUE)
   if (any(duplicated_output)) {
@@ -208,5 +208,8 @@ add_replaced_suffix <- function(path) {
 
 normalize_output_path <- function(path) {
   path <- enc2utf8(path)
-  fs::path_abs(path)
+  fs::path(
+    fs::path_real(fs::path_dir(path)),
+    fs::path_file(path)
+  )
 }

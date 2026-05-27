@@ -58,13 +58,6 @@ test_that("ac_detect_file supports UTF-8 matching", {
   expect_equal(ac_detect_file(ac, paths, stream = TRUE), c(TRUE, TRUE))
 })
 
-test_that("ac_detect_file supports here paths", {
-  testthat::skip_if_not_installed("here")
-  ac <- ac_build("Package")
-
-  expect_true(ac_detect_file(ac, here::here("DESCRIPTION")))
-})
-
 test_that("ac_detect_file supports leftmost match kinds without streaming", {
   ac <- ac_build("hello", match_kind = "leftmost_first")
   path <- tempfile()

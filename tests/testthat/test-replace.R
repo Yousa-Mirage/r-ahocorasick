@@ -83,12 +83,16 @@ test_that("ac_replace matches duplicate pattern indexes", {
 test_that("ac_replace_file writes default output paths", {
   ac <- ac_build(c("fox", "brown", "quick"))
   path <- tempfile(fileext = ".txt")
-  on.exit(unlink(c(path, tools::file_path_sans_ext(path) |> paste0("_replaced.txt"))), add = TRUE)
   writeLines("The quick brown fox.", path)
 
   output <- ac_replace_file(ac, path, c("sloth", "grey", "slow"))
+  on.exit(unlink(c(path, output)), add = TRUE)
 
-  expect_equal(output, paste0(tools::file_path_sans_ext(path), "_replaced.txt"))
+  expect_equal(fs::path_real(fs::path_dir(output)), fs::path_real(fs::path_dir(path)))
+  expect_equal(
+    fs::path_file(output),
+    paste0(tools::file_path_sans_ext(fs::path_file(path)), "_replaced.txt")
+  )
   expect_equal(readLines(output), "The slow grey sloth.")
 })
 
@@ -109,7 +113,8 @@ test_that("ac_replace_file writes explicit output paths", {
   result <- ac_replace_file(ac, paths, "x", output = outputs)
 
   expect_named(result, names(paths))
-  expect_equal(unname(result), normalizePath(outputs, mustWork = FALSE))
+  expect_equal(fs::path_real(fs::path_dir(unname(result))), fs::path_real(fs::path_dir(outputs)))
+  expect_equal(fs::path_file(unname(result)), fs::path_file(outputs))
   expect_equal(readLines(outputs[[1]]), "x x")
   expect_equal(readLines(outputs[[2]]), "nothing")
 })

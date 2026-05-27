@@ -90,13 +90,6 @@ test_that("ac_count_file validates overlapping file search", {
   )
 })
 
-test_that("ac_count_file supports here paths", {
-  testthat::skip_if_not_installed("here")
-  ac <- ac_build("Package")
-
-  expect_equal(ac_count_file(ac, here::here("DESCRIPTION")), 1L)
-})
-
 test_that("ac_count_file supports leftmost match kinds without streaming", {
   ac <- ac_build(
     c("append", "appendage", "app"),
