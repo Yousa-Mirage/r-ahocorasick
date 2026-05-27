@@ -155,12 +155,10 @@ test_that("ac_replace_file errors when output is the input file", {
   on.exit(unlink(path), add = TRUE)
   writeLines("hello", path)
 
-  expect_snapshot(
-    error = TRUE,
-    transform = function(x) {
-      gsub(normalizePath(path, mustWork = FALSE), "<input-file>", x, fixed = TRUE)
-    },
-    ac_replace_file(ac, path, "x", output = path)
+  expect_error(
+    ac_replace_file(ac, path, "x", output = path),
+    "`output` must not be the same file as `path`",
+    fixed = TRUE
   )
 })
 

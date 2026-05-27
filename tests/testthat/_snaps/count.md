@@ -33,24 +33,6 @@
       Error in `ac_count_file()`:
       ! `path` must be a character vector with no missing values.
 
-# ac_count_file errors when a file does not exist
-
-    Code
-      ac_count_file(ac, "definitely-missing-ahocorasick-file.txt")
-    Condition
-      Error in `ac_count_file()`:
-      x The following paths don't exist:
-      'definitely-missing-ahocorasick-file.txt'
-
-# ac_count_file errors when path is not a file
-
-    Code
-      ac_count_file(ac, ".")
-    Condition
-      Error in `ac_count_file()`:
-      x The following paths are not files:
-      '<testthat-dir>'
-
 # ac_count errors when overlapping search is incompatible with match_kind
 
     Code

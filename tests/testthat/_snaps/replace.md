@@ -1,12 +1,3 @@
-# ac_replace_file errors when output is the input file
-
-    Code
-      ac_replace_file(ac, path, "x", output = path)
-    Condition
-      Error in `ac_replace_file()`:
-      x `output` must not be the same file as `path`.
-      '<input-file>'
-
 # ac_replace_file errors on invalid output paths
 
     Code

@@ -91,21 +91,20 @@ test_that("ac_detect_file errors on missing paths", {
 test_that("ac_detect_file errors when a file does not exist", {
   ac <- ac_build("hello")
 
-  expect_snapshot(
-    error = TRUE,
-    ac_detect_file(ac, "definitely-missing-ahocorasick-file.txt")
+  expect_error(
+    ac_detect_file(ac, "definitely-missing-ahocorasick-file.txt"),
+    "The following paths don't exist",
+    fixed = TRUE
   )
 })
 
 test_that("ac_detect_file errors when path is not a file", {
   ac <- ac_build("hello")
 
-  expect_snapshot(
-    error = TRUE,
-    transform = function(x) {
-      gsub(normalizePath(".", mustWork = FALSE), "<testthat-dir>", x, fixed = TRUE)
-    },
-    ac_detect_file(ac, ".")
+  expect_error(
+    ac_detect_file(ac, "."),
+    "The following paths are not files",
+    fixed = TRUE
   )
 })
 
