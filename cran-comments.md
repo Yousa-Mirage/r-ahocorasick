@@ -8,7 +8,9 @@
 
 ## Notes
 
-- This is a new submission.
+- This is the second submission of this package. There were some wording issues
+  in the 'DESCRIPTION' file in the previous submission, which I fixed in this
+  version.
 - `Compilation used the following non-portable flag(s)` is from the local Linux
   toolchain environment. `checking compilation flags in Makevars ... OK` passes,
   and this package does not upload local build artifacts to CRAN. CRAN will
@@ -21,4 +23,4 @@ a small Rust library during installation using `cargo` and `rustc`.
 
 The Rust crate sources are vendored for offline CRAN builds. The vendored
 archive `src/rust/vendor.tar.xz` is about 712 KB, and the complete source
-package `ahocorasick_0.1.0.tar.gz` is about 749 KB.
+package `ahocorasick_0.2.0.tar.gz` is about 756 KB.

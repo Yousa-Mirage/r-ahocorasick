@@ -40,6 +40,9 @@ suitable for high-throughput tasks such as dictionary matching, keyword
 extraction, rule-based text filtering, and large-scale log or document
 analysis.
 
+For more details on the Aho-Corasick algorithm, please see [Aho and
+Corasick (1975)](https://doi.org/10.1145/360825.360855).
+
 ## Installation
 
 Install the released version from CRAN:

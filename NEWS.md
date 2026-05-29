@@ -1,4 +1,4 @@
-# ahocorasick (development version)
+# ahocorasick 0.2.0
 
 - Release on [R-multiverse](https://community.r-multiverse.org/ahocorasick).
 - Add file search APIs `ac_*_file()` for compiled automatons. See documentation for details.
