@@ -3,10 +3,12 @@
 
 # ahocorasick
 
-<div align="center">
+<div data-align="center">
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/ahocorasick)](https://CRAN.R-project.org/package=ahocorasick)
 [![R-universe
 Version](https://yousa-mirage.r-universe.dev/ahocorasick/badges/version)](https://yousa-mirage.r-universe.dev/ahocorasick)
 [![GitHub
@@ -50,6 +52,12 @@ Install the released version from CRAN:
 ``` r
 install.packages("ahocorasick")
 ```
+
+> If you are on Linux, you can try to install pre-compiled binaries
+> [from
+> P3M](https://packagemanager.posit.co/client/#/repos/cran/packages/ahocorasick/overview)
+> for different Linux distributions, so don’t need to compile from
+> source.
 
 Install the released version from R-universe/R-multiverse:
 
