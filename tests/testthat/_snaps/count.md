@@ -51,3 +51,15 @@
       x `doc` must not contain missing values because `na = "error"`.
       i Use `na = "keep"` to keep missing values as `NA`.
 
+# ac_count requires optional arguments to be named
+
+    Code
+      ac_count(ac, "hello", TRUE, "zero")
+    Condition
+      Error in `ac_count()`:
+      ! `...` must be empty.
+      x Problematic arguments:
+      * ..1 = TRUE
+      * ..2 = "zero"
+      i Did you forget to name an argument?
+

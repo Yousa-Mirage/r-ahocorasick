@@ -41,3 +41,14 @@
       x `doc` must not contain missing values because `na = "error"`.
       i Use `na = "keep"` to keep missing values as `NA`.
 
+# ac_replace_file requires optional arguments to be named
+
+    Code
+      ac_replace_file(ac, path, "x", output)
+    Condition
+      Error in `ac_replace_file()`:
+      ! `...` must be empty.
+      x Problematic argument:
+      * ..1 = output
+      i Did you forget to name an argument?
+

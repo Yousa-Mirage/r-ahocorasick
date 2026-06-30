@@ -4,7 +4,7 @@
 \alias{ac_locate_file}
 \title{Locate pattern matches in files}
 \usage{
-ac_locate_file(ac, path, overlapping = FALSE)
+ac_locate_file(ac, path, ..., overlapping = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

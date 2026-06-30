@@ -4,7 +4,7 @@
 \alias{ac_replace}
 \title{Replace pattern matches in documents}
 \usage{
-ac_replace(ac, doc, replace_with, na = c("keep", "empty", "error"))
+ac_replace(ac, doc, replace_with, ..., na = c("keep", "empty", "error"))
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

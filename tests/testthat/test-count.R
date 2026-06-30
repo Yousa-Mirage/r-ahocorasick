@@ -160,3 +160,12 @@ test_that("ac_count errors when missing documents are disallowed", {
     ac_count(ac, c("hello", NA_character_), na = "error")
   )
 })
+
+test_that("ac_count requires optional arguments to be named", {
+  ac <- ac_build("hello")
+
+  expect_snapshot(
+    error = TRUE,
+    ac_count(ac, "hello", TRUE, "zero")
+  )
+})

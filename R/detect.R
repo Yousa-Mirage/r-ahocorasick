@@ -21,8 +21,11 @@
 ac_detect <- function(
   ac,
   doc,
+  ...,
   na = c("keep", "false", "error")
 ) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
 
   if (!checkmate::test_character(doc)) {
@@ -68,7 +71,9 @@ ac_detect <- function(
 #' writeLines("hello world", path)
 #' ac_detect_file(ac, path)
 #' @export
-ac_detect_file <- function(ac, path, stream = FALSE) {
+ac_detect_file <- function(ac, path, ..., stream = FALSE) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
   stream <- validate_file_stream(stream)
   if (stream) {

@@ -39,6 +39,13 @@ test_that("ac_build errors on invalid pattern vectors", {
   )
 })
 
+test_that("ac_build requires optional arguments to be named", {
+  expect_snapshot(
+    error = TRUE,
+    ac_build(c("hello"), "leftmost_first")
+  )
+})
+
 test_that("ac_automaton validation catches invalid external pointers", {
   ac <- structure(
     list(ptr = new("externalptr")),

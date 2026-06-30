@@ -4,7 +4,13 @@
 \alias{ac_locate_df}
 \title{Locate pattern matches as a data frame}
 \usage{
-ac_locate_df(ac, doc, overlapping = FALSE, na = c("omit", "keep", "error"))
+ac_locate_df(
+  ac,
+  doc,
+  ...,
+  overlapping = FALSE,
+  na = c("omit", "keep", "error")
+)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

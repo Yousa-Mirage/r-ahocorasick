@@ -4,7 +4,7 @@
 \alias{ac_replace_file}
 \title{Replace pattern matches in files}
 \usage{
-ac_replace_file(ac, path, replace_with, output = NULL, stream = FALSE)
+ac_replace_file(ac, path, replace_with, ..., output = NULL, stream = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

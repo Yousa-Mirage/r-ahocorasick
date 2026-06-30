@@ -4,7 +4,7 @@
 \alias{ac_extract_file}
 \title{Extract pattern matches from files}
 \usage{
-ac_extract_file(ac, path, stream = FALSE, overlapping = FALSE)
+ac_extract_file(ac, path, ..., stream = FALSE, overlapping = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

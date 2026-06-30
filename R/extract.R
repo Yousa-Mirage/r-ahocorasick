@@ -33,9 +33,12 @@
 ac_extract <- function(
   ac,
   doc,
+  ...,
   overlapping = FALSE,
   na = c("keep", "empty", "error")
 ) {
+  rlang::check_dots_empty()
+
   # Validate inputs
   ac <- validate_ac_automaton(ac)
 
@@ -131,7 +134,9 @@ ac_extract <- function(
 #' writeLines("hello world", path)
 #' ac_extract_file(ac, path)
 #' @export
-ac_extract_file <- function(ac, path, stream = FALSE, overlapping = FALSE) {
+ac_extract_file <- function(ac, path, ..., stream = FALSE, overlapping = FALSE) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
   stream <- validate_file_stream(stream)
   overlapping <- validate_file_overlapping(ac, overlapping, stream)
@@ -195,9 +200,12 @@ ac_extract_file <- function(ac, path, stream = FALSE, overlapping = FALSE) {
 ac_extract_df <- function(
   ac,
   doc,
+  ...,
   overlapping = FALSE,
   na = c("omit", "keep", "error")
 ) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
 
   na <- rlang::arg_match(na)

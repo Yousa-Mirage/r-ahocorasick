@@ -4,7 +4,7 @@
 \alias{ac_count}
 \title{Count pattern matches in documents}
 \usage{
-ac_count(ac, doc, overlapping = FALSE, na = c("keep", "zero", "error"))
+ac_count(ac, doc, ..., overlapping = FALSE, na = c("keep", "zero", "error"))
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

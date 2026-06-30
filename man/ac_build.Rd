@@ -6,6 +6,7 @@
 \usage{
 ac_build(
   patterns,
+  ...,
   match_kind = c("standard", "leftmost_first", "leftmost_longest"),
   implementation = c("auto", "noncontiguous_nfa", "contiguous_nfa", "dfa"),
   ascii_case_insensitive = FALSE,

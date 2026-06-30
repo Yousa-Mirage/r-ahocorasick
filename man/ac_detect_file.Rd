@@ -4,7 +4,7 @@
 \alias{ac_detect_file}
 \title{Detect pattern matches in files}
 \usage{
-ac_detect_file(ac, path, stream = FALSE)
+ac_detect_file(ac, path, ..., stream = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

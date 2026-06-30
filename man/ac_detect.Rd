@@ -4,7 +4,7 @@
 \alias{ac_detect}
 \title{Detect pattern matches in documents}
 \usage{
-ac_detect(ac, doc, na = c("keep", "false", "error"))
+ac_detect(ac, doc, ..., na = c("keep", "false", "error"))
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

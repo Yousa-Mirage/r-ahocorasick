@@ -4,7 +4,7 @@
 \alias{ac_extract}
 \title{Extract pattern matches from documents}
 \usage{
-ac_extract(ac, doc, overlapping = FALSE, na = c("keep", "empty", "error"))
+ac_extract(ac, doc, ..., overlapping = FALSE, na = c("keep", "empty", "error"))
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

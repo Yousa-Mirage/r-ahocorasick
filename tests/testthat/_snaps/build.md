@@ -15,6 +15,17 @@
       Error in `ac_build()`:
       ! `patterns` must be a character vector of non-empty strings with no missing values.
 
+# ac_build requires optional arguments to be named
+
+    Code
+      ac_build(c("hello"), "leftmost_first")
+    Condition
+      Error in `ac_build()`:
+      ! `...` must be empty.
+      x Problematic argument:
+      * ..1 = "leftmost_first"
+      i Did you forget to name an argument?
+
 # ac_automaton validation catches invalid external pointers
 
     Code

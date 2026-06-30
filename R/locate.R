@@ -35,9 +35,12 @@
 ac_locate <- function(
   ac,
   doc,
+  ...,
   overlapping = FALSE,
   na = c("keep", "empty", "error")
 ) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
 
   if (!checkmate::test_character(doc)) {
@@ -139,7 +142,9 @@ ac_locate <- function(
 #' writeLines("hello world", path)
 #' ac_locate_file(ac, path)
 #' @export
-ac_locate_file <- function(ac, path, overlapping = FALSE) {
+ac_locate_file <- function(ac, path, ..., overlapping = FALSE) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
   overlapping <- validate_file_overlapping(ac, overlapping)
   path <- validate_stream_file_path(path)
@@ -196,9 +201,12 @@ ac_locate_file <- function(ac, path, overlapping = FALSE) {
 ac_locate_bytes <- function(
   ac,
   doc,
+  ...,
   overlapping = FALSE,
   na = c("omit", "keep", "error")
 ) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
 
   if (!checkmate::test_character(doc)) {
@@ -282,9 +290,12 @@ ac_locate_bytes <- function(
 ac_locate_df <- function(
   ac,
   doc,
+  ...,
   overlapping = FALSE,
   na = c("omit", "keep", "error")
 ) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
 
   na <- rlang::arg_match(na)

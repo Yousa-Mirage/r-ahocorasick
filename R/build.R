@@ -30,11 +30,14 @@
 #' @export
 ac_build <- function(
   patterns,
+  ...,
   match_kind = c("standard", "leftmost_first", "leftmost_longest"),
   implementation = c("auto", "noncontiguous_nfa", "contiguous_nfa", "dfa"),
   ascii_case_insensitive = FALSE,
   duplicate = c("keep", "error", "deduplicate")
 ) {
+  rlang::check_dots_empty()
+
   match_kind <- rlang::arg_match(match_kind)
   implementation <- rlang::arg_match(implementation)
   duplicate <- rlang::arg_match(duplicate)

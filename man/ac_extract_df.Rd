@@ -4,7 +4,13 @@
 \alias{ac_extract_df}
 \title{Extract pattern matches as a data frame}
 \usage{
-ac_extract_df(ac, doc, overlapping = FALSE, na = c("omit", "keep", "error"))
+ac_extract_df(
+  ac,
+  doc,
+  ...,
+  overlapping = FALSE,
+  na = c("omit", "keep", "error")
+)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

@@ -32,8 +32,11 @@ ac_replace <- function(
   ac,
   doc,
   replace_with,
+  ...,
   na = c("keep", "empty", "error")
 ) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
 
   if (!checkmate::test_character(doc)) {
@@ -94,9 +97,12 @@ ac_replace_file <- function(
   ac,
   path,
   replace_with,
+  ...,
   output = NULL,
   stream = FALSE
 ) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
   stream <- validate_file_stream(stream)
   if (stream) {

@@ -208,3 +208,16 @@ test_that("ac_replace errors when missing documents are disallowed", {
     ac_replace(ac, c("hello", NA_character_), "x", na = "error")
   )
 })
+
+test_that("ac_replace_file requires optional arguments to be named", {
+  ac <- ac_build("hello")
+  path <- tempfile()
+  output <- tempfile()
+  on.exit(unlink(c(path, output)), add = TRUE)
+  writeLines("hello", path)
+
+  expect_snapshot(
+    error = TRUE,
+    ac_replace_file(ac, path, "x", output)
+  )
+})

@@ -24,9 +24,12 @@
 ac_count <- function(
   ac,
   doc,
+  ...,
   overlapping = FALSE,
   na = c("keep", "zero", "error")
 ) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
 
   if (!checkmate::test_character(doc)) {
@@ -85,7 +88,9 @@ ac_count <- function(
 #' writeLines("hello hello world", path)
 #' ac_count_file(ac, path)
 #' @export
-ac_count_file <- function(ac, path, stream = FALSE, overlapping = FALSE) {
+ac_count_file <- function(ac, path, ..., stream = FALSE, overlapping = FALSE) {
+  rlang::check_dots_empty()
+
   ac <- validate_ac_automaton(ac)
   stream <- validate_file_stream(stream)
   overlapping <- validate_file_overlapping(ac, overlapping, stream)

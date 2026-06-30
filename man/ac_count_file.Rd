@@ -4,7 +4,7 @@
 \alias{ac_count_file}
 \title{Count pattern matches in files}
 \usage{
-ac_count_file(ac, path, stream = FALSE, overlapping = FALSE)
+ac_count_file(ac, path, ..., stream = FALSE, overlapping = FALSE)
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}

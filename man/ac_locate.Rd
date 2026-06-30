@@ -4,7 +4,7 @@
 \alias{ac_locate}
 \title{Locate pattern matches in strings}
 \usage{
-ac_locate(ac, doc, overlapping = FALSE, na = c("keep", "empty", "error"))
+ac_locate(ac, doc, ..., overlapping = FALSE, na = c("keep", "empty", "error"))
 }
 \arguments{
 \item{ac}{An \verb{<ac_automaton>} object created by \code{ac_build()}.}
