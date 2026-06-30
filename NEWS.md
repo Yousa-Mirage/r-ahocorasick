@@ -1,3 +1,8 @@
+# ahocorasick 0.3.0
+
+- Add `...` dots in functions arguments to force optional parameters to be
+  passed explicitly.
+
 # ahocorasick 0.2.0
 
 - Release on [R-multiverse](https://community.r-multiverse.org/ahocorasick).
