@@ -11,6 +11,9 @@ ac_extract(ac, doc, ..., overlapping = FALSE, na = c("keep", "empty", "error"))
 
 \item{doc}{A character vector of documents to search.}
 
+\item{...}{Must be empty. This is used to require optional arguments to be
+supplied by name.}
+
 \item{overlapping}{Default is \code{FALSE}. If \code{TRUE}, extract overlapping
 matches. This is only supported when \code{ac} was built with
 \code{match_kind = "standard"}.}

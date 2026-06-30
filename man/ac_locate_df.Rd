@@ -17,6 +17,9 @@ ac_locate_df(
 
 \item{doc}{A character vector of documents to search.}
 
+\item{...}{Must be empty. This is used to require optional arguments to be
+supplied by name.}
+
 \item{overlapping}{Default is \code{FALSE}. If \code{TRUE}, report overlapping
 matches. This is only supported when \code{ac} was built with
 \code{match_kind = "standard"}.}

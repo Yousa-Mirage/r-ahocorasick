@@ -16,6 +16,9 @@ same replacement is used for every pattern. Otherwise, it \strong{MUST} have the
 same length as \code{ac_patterns(ac)}, and replacements are matched to patterns
 by position.}
 
+\item{...}{Must be empty. This is used to require optional arguments to be
+supplied by name.}
+
 \item{na}{How to handle \code{NA} documents. \code{"keep"} returns \code{NA_character_}
 (default); \code{"empty"} treats missing documents as empty strings; \code{"error"}
 fails.}

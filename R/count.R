@@ -4,6 +4,8 @@
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param doc A character vector of documents to search.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param overlapping Default is `FALSE`. If `TRUE`, count overlapping
 #'   matches. This is only supported when `ac` was built with
 #'   `match_kind = "standard"`.
@@ -72,6 +74,8 @@ ac_count <- function(
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param path A vector of file paths to search.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param stream If `FALSE` (default), each file is read into memory before
 #'   searching. If `TRUE`, files are searched as streams. Stream search requires
 #'   an automaton built with `match_kind = "standard"`.

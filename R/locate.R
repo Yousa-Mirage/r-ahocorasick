@@ -6,6 +6,8 @@
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param doc A character vector of documents to search.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
 #'   matches. This is only supported when `ac` was built with `match_kind = "standard"`.
 #' @param na How to handle `NA` documents. `"keep"` returns one row with
@@ -124,6 +126,8 @@ ac_locate <- function(
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param path A vector of file paths to search.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
 #'   matches. This is only supported when `ac` was built with
 #'   `match_kind = "standard"`.
@@ -182,6 +186,8 @@ ac_locate_file <- function(ac, path, ..., overlapping = FALSE) {
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param doc A character vector of documents to search.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
 #'   matches. This is only supported when `ac` was built with
 #'   `match_kind = "standard"`.
@@ -271,6 +277,8 @@ ac_locate_bytes <- function(
 #'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param doc A character vector of documents to search.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param overlapping Default is `FALSE`. If `TRUE`, report overlapping
 #'   matches. This is only supported when `ac` was built with
 #'   `match_kind = "standard"`.

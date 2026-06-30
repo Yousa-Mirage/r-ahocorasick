@@ -11,6 +11,9 @@ ac_detect(ac, doc, ..., na = c("keep", "false", "error"))
 
 \item{doc}{A character vector of documents to search.}
 
+\item{...}{Must be empty. This is used to require optional arguments to be
+supplied by name.}
+
 \item{na}{How to handle \code{NA} documents. \code{"keep"} returns \code{NA}
 (default); \code{"false"} treats missing documents as not matched; \code{"error"}
 fails.}

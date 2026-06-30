@@ -9,6 +9,8 @@
 #'   same replacement is used for every pattern. Otherwise, it **MUST** have the
 #'   same length as `ac_patterns(ac)`, and replacements are matched to patterns
 #'   by position.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param na How to handle `NA` documents. `"keep"` returns `NA_character_`
 #'   (default); `"empty"` treats missing documents as empty strings; `"error"`
 #'   fails.
@@ -76,6 +78,8 @@ ac_replace <- function(
 #'   same replacement is used for every pattern. Otherwise, it **MUST** have the
 #'   same length as `ac_patterns(ac)`, and replacements are matched to patterns
 #'   by position.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param output A vector of output file paths. It must have the same
 #'   length as `path`. If `NULL`, output paths are created by adding
 #'   `"_replaced"` suffix. Existing output files are overwritten.

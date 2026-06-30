@@ -16,6 +16,9 @@ ac_build(
 \arguments{
 \item{patterns}{A character vector of non-empty patterns.}
 
+\item{...}{Must be empty. This is used to require optional arguments to be
+supplied by name.}
+
 \item{match_kind}{Matching semantics:
 \itemize{
 \item \code{"standard"} supports overlapping search (Default).

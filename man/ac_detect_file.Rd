@@ -11,6 +11,9 @@ ac_detect_file(ac, path, ..., stream = FALSE)
 
 \item{path}{A vector of file paths to search.}
 
+\item{...}{Must be empty. This is used to require optional arguments to be
+supplied by name.}
+
 \item{stream}{If \code{FALSE} (default), each file is read into memory before
 searching. If \code{TRUE}, files are searched as streams. Stream search requires
 an automaton built with \code{match_kind = "standard"}.}

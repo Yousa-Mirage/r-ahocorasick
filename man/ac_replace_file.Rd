@@ -16,6 +16,9 @@ same replacement is used for every pattern. Otherwise, it \strong{MUST} have the
 same length as \code{ac_patterns(ac)}, and replacements are matched to patterns
 by position.}
 
+\item{...}{Must be empty. This is used to require optional arguments to be
+supplied by name.}
+
 \item{output}{A vector of output file paths. It must have the same
 length as \code{path}. If \code{NULL}, output paths are created by adding
 \code{"_replaced"} suffix. Existing output files are overwritten.}

@@ -4,6 +4,8 @@
 #' automaton backed by the Rust `aho-corasick` crate.
 #'
 #' @param patterns A character vector of non-empty patterns.
+#' @param ... Must be empty. This is used to require optional arguments to be
+#'   supplied by name.
 #' @param match_kind Matching semantics:
 #'   * `"standard"` supports overlapping search (Default).
 #'   * `"leftmost_first"` returns leftmost non-overlapping matches, breaking
