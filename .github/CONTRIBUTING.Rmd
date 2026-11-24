@@ -2,6 +2,7 @@
 output:
   github_document:
     html_preview: false
+    md_extensions: -native_divs
 ---
 
 # Contributing to `ahocorasick`
