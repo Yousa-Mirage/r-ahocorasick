@@ -49,6 +49,9 @@ ac_build <- function(
       "{.arg patterns} must be a character vector of non-empty strings with no missing values."
     )
   }
+
+  patterns <- as_valid_utf8(patterns)
+
   if (!checkmate::test_flag(ascii_case_insensitive)) {
     cli::cli_abort("{.arg ascii_case_insensitive} must be a logical value.")
   }
@@ -64,9 +67,8 @@ ac_build <- function(
     patterns <- patterns[keep]
   }
 
-  patterns_utf8 <- enc2utf8(patterns)
   ptr <- rust_ac_build(
-    patterns_utf8,
+    patterns,
     match_kind,
     implementation,
     ascii_case_insensitive
@@ -76,7 +78,7 @@ ac_build <- function(
   structure(
     list(
       ptr = ptr,
-      patterns = patterns_utf8,
+      patterns = patterns,
       options = list(
         match_kind = match_kind,
         implementation = implementation,

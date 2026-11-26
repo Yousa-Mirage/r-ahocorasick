@@ -57,8 +57,7 @@ ac_replace <- function(
   out <- rep(ifelse(na == "empty", "", NA_character_), length(doc))
   names(out) <- names(doc)
 
-  doc <- enc2utf8(doc)
-  replace_with <- enc2utf8(replace_with)
+  doc <- as_valid_utf8(doc)
   keep <- !is.na(doc)
   if (any(keep)) {
     out[keep] <- rust_ac_replace(ac$ptr, doc[keep], replace_with)
@@ -143,11 +142,13 @@ validate_replace_with <- function(ac, replace_with) {
     )
   }
 
+  replace_with <- as_valid_utf8(replace_with, call = rlang::caller_env())
+
   if (length(replace_with) == 1L) {
     replace_with <- rep(replace_with, length(ac))
   }
 
-  enc2utf8(replace_with)
+  replace_with
 }
 
 validate_replace_output_path <- function(path, output = NULL) {
@@ -161,6 +162,8 @@ validate_replace_output_path <- function(path, output = NULL) {
       call = rlang::caller_env()
     )
   }
+
+  output <- as_valid_utf8(output, call = rlang::caller_env())
 
   if (length(output) != length(path)) {
     cli::cli_abort(

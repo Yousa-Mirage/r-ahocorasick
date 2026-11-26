@@ -72,6 +72,32 @@ validate_ac_automaton <- function(ac) {
   ac
 }
 
+# Convert strings to UTF-8 and reject any that are still not valid UTF-8.
+as_valid_utf8 <- function(
+  x,
+  arg = rlang::caller_arg(x),
+  call = rlang::caller_env()
+) {
+  # Capture the argument name before `x` is reassigned.
+  force(arg)
+  x <- enc2utf8(x)
+
+  invalid <- which(!is.na(x) & !validUTF8(x))
+  if (length(invalid) > 0L) {
+    positions <- cli::cli_vec(invalid, list("vec-trunc" = 5L))
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} must contain valid UTF-8 strings.",
+        "x" = "Invalid UTF-8 found at {cli::qty(length(invalid))}position{?s} {positions}.",
+        "i" = "Re-encode the text with {.fn iconv}, or read it with the correct {.arg encoding}."
+      ),
+      call = call
+    )
+  }
+
+  x
+}
+
 compact_rows <- function(rows, empty) {
   rows <- rows[!vapply(rows, is.null, logical(1))]
   if (length(rows) == 0L) {
@@ -92,7 +118,10 @@ validate_stream_file_path <- function(path) {
   }
 
   path_names <- names(path)
-  path <- normalizePath(enc2utf8(path), mustWork = FALSE)
+  path <- normalizePath(
+    as_valid_utf8(path, call = rlang::caller_env()),
+    mustWork = FALSE
+  )
   names(path) <- path_names
 
   file_exists <- fs::file_info(path)$type == "file"

@@ -59,7 +59,7 @@ ac_count <- function(
   out <- rep(ifelse(na == "zero", 0L, NA_integer_), length(doc))
   names(out) <- names(doc)
 
-  doc <- enc2utf8(doc)
+  doc <- as_valid_utf8(doc)
   keep <- !is.na(doc)
   if (any(keep)) {
     out[keep] <- rust_ac_count(ac$ptr, doc[keep], overlapping)

@@ -66,7 +66,7 @@ ac_extract <- function(
     ))
   }
 
-  doc <- enc2utf8(doc)
+  doc <- as_valid_utf8(doc)
   out <- rep(list(new_extract_result()), length(doc))
   names(out) <- names(doc)
 
@@ -234,7 +234,7 @@ ac_extract_df <- function(
     ))
   }
 
-  doc <- enc2utf8(doc)
+  doc <- as_valid_utf8(doc)
   missing <- is.na(doc)
   keep <- !missing
 

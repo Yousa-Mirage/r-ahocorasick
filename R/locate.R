@@ -67,7 +67,7 @@ ac_locate <- function(
     ))
   }
 
-  doc <- enc2utf8(doc)
+  doc <- as_valid_utf8(doc)
   out <- rep(list(new_locate_result()), length(doc))
   names(out) <- names(doc)
 
@@ -237,7 +237,7 @@ ac_locate_bytes <- function(
     ))
   }
 
-  doc <- enc2utf8(doc)
+  doc <- as_valid_utf8(doc)
   missing <- is.na(doc)
   keep <- !missing
 
@@ -326,7 +326,7 @@ ac_locate_df <- function(
     ))
   }
 
-  doc <- enc2utf8(doc)
+  doc <- as_valid_utf8(doc)
   missing <- is.na(doc)
   keep <- !missing
 
