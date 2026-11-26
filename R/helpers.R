@@ -58,8 +58,10 @@ print.ac_automaton <- function(x, ...) {
 
 #' @export
 length.ac_automaton <- function(x) {
-  x <- validate_ac_automaton(x)
-  x$info$patterns_len
+  if (!is.list(x)) {
+    return(length(unclass(x)))
+  }
+  length(.subset2(x, "patterns"))
 }
 
 # Return whether `ac` holds a pointer to a live Rust automaton. Never errors.

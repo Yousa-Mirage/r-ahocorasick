@@ -73,3 +73,14 @@ test_that("print shows a hint for automatons restored from disk", {
   })
   expect_identical(print(restored), restored)
 })
+
+test_that("length works for automatons restored from disk", {
+  ac <- ac_build(c("hello", "world", "hello"), duplicate = "deduplicate")
+  path <- tempfile(fileext = ".rds")
+  on.exit(unlink(path), add = TRUE)
+  saveRDS(ac, path)
+
+  expect_identical(length(ac), 2L)
+  expect_identical(length(readRDS(path)), 2L)
+  expect_identical(length(structure(list(), class = "ac_automaton")), 0L)
+})

@@ -18,8 +18,8 @@
 - `ac_count()` and `ac_count_file()` now give an error when a document or file
   has more matches than the largest R integer, instead of returning a wrong
   count.
-- `print()` no longer fails for automatons restored with `readRDS()` or from a
-  saved workspace.
+- `print()` and `length()` no longer fail for automatons restored with
+  `readRDS()` or from a saved workspace.
 
 ## Performance improvements
 
