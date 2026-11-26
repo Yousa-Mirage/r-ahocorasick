@@ -19,14 +19,14 @@ pub(crate) struct RawMatch {
 
 pub(crate) fn collect_raw_matches(
     automaton: &AhoCorasick,
-    haystack: &str,
+    haystack: &[u8],
     overlapping: bool,
 ) -> Result<Vec<RawMatch>> {
     let mut raw_matches = Vec::new();
 
     if overlapping {
         let matches = automaton
-            .try_find_overlapping_iter(haystack.as_bytes())
+            .try_find_overlapping_iter(haystack)
             .map_err(|err| Error::Other(err.to_string()))?;
 
         for mat in matches {
@@ -38,7 +38,7 @@ pub(crate) fn collect_raw_matches(
         }
     } else {
         let matches = automaton
-            .try_find_iter(haystack.as_bytes())
+            .try_find_iter(haystack)
             .map_err(|err| Error::Other(err.to_string()))?;
 
         for mat in matches {

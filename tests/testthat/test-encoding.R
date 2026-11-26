@@ -43,6 +43,36 @@ test_that("file functions reject paths with invalid UTF-8", {
   )
 })
 
+test_that("ac_extract_file searches files that are not UTF-8", {
+  ac <- ac_build(c("he", "llo"))
+  path <- tempfile()
+  # "hello caf\xe9" in latin1: valid bytes for searching, invalid UTF-8.
+  writeBin(c(charToRaw("hello caf"), as.raw(0xe9), charToRaw("\n")), path)
+  on.exit(unlink(path), add = TRUE)
+
+  expected <- list(data.frame(
+    matches = c("he", "llo"),
+    patterns = c("he", "llo")
+  ))
+
+  expect_equal(ac_extract_file(ac, path), expected)
+  expect_equal(ac_extract_file(ac, path, stream = TRUE), expected)
+  expect_equal(ac_extract_file(ac, path, overlapping = TRUE), expected)
+  expect_equal(ac_count_file(ac, path), 2L)
+})
+
+test_that("ac_locate_file explains that files must be UTF-8", {
+  ac <- ac_build("he")
+  path <- tempfile()
+  writeBin(c(charToRaw("hello caf"), as.raw(0xe9), charToRaw("\n")), path)
+  on.exit(unlink(path), add = TRUE)
+
+  expect_error(
+    ac_locate_file(ac, path),
+    "is not valid UTF-8 \\(first invalid byte at offset 9\\)"
+  )
+})
+
 test_that("latin1 strings are converted to UTF-8 before matching", {
   cafe <- rawToChar(as.raw(c(0x63, 0x61, 0x66, 0xe9)))
   Encoding(cafe) <- "latin1"

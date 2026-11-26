@@ -22,7 +22,7 @@ pub fn rust_ac_extract(
     let mut out_matches = Vec::new();
 
     for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
-        let raw_matches = collect_raw_matches(&automaton.ac, haystack, overlapping)?;
+        let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
 
         for raw_match in raw_matches {
             let matched = haystack
@@ -58,15 +58,22 @@ pub fn rust_ac_extract_file(
 
     for (file_index, file_path) in path.iter().enumerate() {
         let file_id = (file_index + 1) as i32;
-        let haystack = fs::read_to_string(file_path)
+
+        let haystack = fs::read(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
 
         let raw_matches = collect_raw_matches(&automaton.ac, &haystack, overlapping)?;
 
         for raw_match in raw_matches {
-            let matched = haystack
+            let matched_bytes = haystack
                 .get(raw_match.start_byte..raw_match.end_byte)
-                .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?
+                .ok_or_else(|| Error::Other("match offsets are out of bounds".into()))?;
+            let matched = std::str::from_utf8(matched_bytes)
+                .map_err(|err| {
+                    Error::Other(format!(
+                        "failed to extract `{file_path}`: matched bytes are not UTF-8: {err}"
+                    ))
+                })?
                 .to_owned();
 
             out_file_id.push(file_id);

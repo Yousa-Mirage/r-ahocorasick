@@ -4,6 +4,9 @@
   passed explicitly.
 - Strings that are not valid UTF-8 now give an informative error instead of
   being passed to Rust, where they could crash the R session.
+- `ac_extract_file(stream = FALSE)` now searches files that are not UTF-8,
+  like the other `ac_*_file()` functions. `ac_locate_file()` still needs UTF-8
+  files to compute character positions, and its error now says so.
 
 # ahocorasick 0.2.0
 

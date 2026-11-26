@@ -23,7 +23,7 @@ pub fn rust_ac_locate(
     let mut out_end = Vec::new();
 
     for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
-        let raw_matches = collect_raw_matches(&automaton.ac, haystack, overlapping)?;
+        let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
         let offset_map = Utf8OffsetMap::for_offsets(
             haystack,
             raw_matches
@@ -68,7 +68,7 @@ pub fn rust_ac_locate_bytes(
     let mut out_byte_end = Vec::new();
 
     for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
-        let raw_matches = collect_raw_matches(&automaton.ac, haystack, overlapping)?;
+        let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
 
         for raw_match in raw_matches {
             out_doc_id.push(*doc_id);
@@ -104,10 +104,18 @@ pub fn rust_ac_locate_file(
 
     for (file_index, file_path) in path.iter().enumerate() {
         let file_id = (file_index + 1) as i32;
-        let haystack = fs::read_to_string(file_path)
+        let bytes = fs::read(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
+        // Character positions are only defined for UTF-8 text.
+        let haystack = String::from_utf8(bytes).map_err(|err| {
+            Error::Other(format!(
+                "`{file_path}` is not valid UTF-8 (first invalid byte at offset {}); \
+                 character positions can only be computed for UTF-8 files",
+                err.utf8_error().valid_up_to()
+            ))
+        })?;
 
-        let raw_matches = collect_raw_matches(&automaton.ac, &haystack, overlapping)?;
+        let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
 
         let offset_map = Utf8OffsetMap::for_offsets(
             &haystack,

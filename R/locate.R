@@ -124,6 +124,10 @@ ac_locate <- function(
 #' `ac_locate_file()` as a simple in-memory search is the clearest
 #' implementation.
 #'
+#' Files must be UTF-8 encoded, because character positions are only defined
+#' for UTF-8 text. A file with invalid UTF-8 gives an error. The other
+#' `ac_*_file()` functions search raw bytes and accept files in any encoding.
+#'
 #' @param ac An `<ac_automaton>` object created by `ac_build()`.
 #' @param path A vector of file paths to search.
 #' @param ... Must be empty. This is used to require optional arguments to be
