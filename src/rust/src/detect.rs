@@ -4,14 +4,15 @@ use extendr_api::Result;
 use extendr_api::prelude::*;
 
 use crate::automaton::AcAutomaton;
+use crate::r_strs;
 
 // Return whether each haystack has at least one match.
 #[extendr]
-pub fn rust_ac_detect(ptr: ExternalPtr<AcAutomaton>, doc: Vec<String>) -> Result<Vec<bool>> {
+pub fn rust_ac_detect(ptr: ExternalPtr<AcAutomaton>, doc: Strings) -> Result<Vec<bool>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(doc.len());
 
-    for haystack in &doc {
+    for haystack in r_strs(&doc) {
         let detected = automaton
             .ac
             .try_find(haystack.as_bytes())
@@ -25,11 +26,11 @@ pub fn rust_ac_detect(ptr: ExternalPtr<AcAutomaton>, doc: Vec<String>) -> Result
 
 // Return whether each file has at least one match.
 #[extendr]
-pub fn rust_ac_detect_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> Result<Vec<bool>> {
+pub fn rust_ac_detect_file(ptr: ExternalPtr<AcAutomaton>, path: Strings) -> Result<Vec<bool>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(path.len());
 
-    for file_path in &path {
+    for file_path in r_strs(&path) {
         let haystack = fs::read(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
         let detected = automaton
@@ -47,12 +48,12 @@ pub fn rust_ac_detect_file(ptr: ExternalPtr<AcAutomaton>, path: Vec<String>) -> 
 #[extendr]
 pub fn rust_ac_detect_file_stream(
     ptr: ExternalPtr<AcAutomaton>,
-    path: Vec<String>,
+    path: Strings,
 ) -> Result<Vec<bool>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(path.len());
 
-    for file_path in &path {
+    for file_path in r_strs(&path) {
         let file = File::open(file_path)
             .map_err(|err| Error::Other(format!("failed to open `{file_path}`: {err}")))?;
         let mut matches = automaton

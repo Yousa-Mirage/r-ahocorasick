@@ -1,7 +1,12 @@
 # ahocorasick 0.2.1
 
+## Breaking change
+
 - Add `...` dots in functions arguments to force optional parameters to be
   passed explicitly.
+
+## Bug fixes
+
 - Strings that are not valid UTF-8 now give an informative error instead of
   being passed to Rust, where they could crash the R session.
 - `ac_extract_file(stream = FALSE)` now searches files that are not UTF-8,
@@ -10,6 +15,14 @@
 - `ac_replace_file()` now checks its default output paths the same way as
   explicit ones. Before, with inputs such as `c("a.txt", "a_replaced.txt")`,
   the output of the first file silently overwrote the second input.
+- `ac_count()` and `ac_count_file()` now give an error when a document or file
+  has more matches than the largest R integer, instead of returning a wrong
+  count.
+
+## Performance improvements
+
+- Documents are no longer copied when they are passed to Rust, which roughly
+  halves peak memory use when searching long texts.
 
 # ahocorasick 0.2.0
 

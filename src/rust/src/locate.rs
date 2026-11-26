@@ -4,14 +4,14 @@ use extendr_api::Result;
 use extendr_api::prelude::*;
 
 use crate::automaton::AcAutomaton;
-use crate::collect_raw_matches;
 use crate::offsets::Utf8OffsetMap;
+use crate::{collect_raw_matches, r_strs};
 
 // Return matches with R-style character offsets for UTF-8 strings.
 #[extendr]
 pub fn rust_ac_locate(
     ptr: ExternalPtr<AcAutomaton>,
-    doc: Vec<String>,
+    doc: Strings,
     doc_ids: Vec<i32>,
     overlapping: bool,
 ) -> Result<List> {
@@ -22,7 +22,7 @@ pub fn rust_ac_locate(
     let mut out_start = Vec::new();
     let mut out_end = Vec::new();
 
-    for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
+    for (haystack, doc_id) in r_strs(&doc).zip(doc_ids.iter()) {
         let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
         let offset_map = Utf8OffsetMap::for_offsets(
             haystack,
@@ -56,7 +56,7 @@ pub fn rust_ac_locate(
 #[extendr]
 pub fn rust_ac_locate_bytes(
     ptr: ExternalPtr<AcAutomaton>,
-    doc: Vec<String>,
+    doc: Strings,
     doc_ids: Vec<i32>,
     overlapping: bool,
 ) -> Result<List> {
@@ -67,7 +67,7 @@ pub fn rust_ac_locate_bytes(
     let mut out_byte_start = Vec::new();
     let mut out_byte_end = Vec::new();
 
-    for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
+    for (haystack, doc_id) in r_strs(&doc).zip(doc_ids.iter()) {
         let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
 
         for raw_match in raw_matches {
@@ -92,7 +92,7 @@ pub fn rust_ac_locate_bytes(
 #[extendr]
 pub fn rust_ac_locate_file(
     ptr: ExternalPtr<AcAutomaton>,
-    path: Vec<String>,
+    path: Strings,
     overlapping: bool,
 ) -> Result<List> {
     let automaton = ptr.try_addr()?;
@@ -102,7 +102,7 @@ pub fn rust_ac_locate_file(
     let mut out_start = Vec::new();
     let mut out_end = Vec::new();
 
-    for (file_index, file_path) in path.iter().enumerate() {
+    for (file_index, file_path) in r_strs(&path).enumerate() {
         let file_id = (file_index + 1) as i32;
         let bytes = fs::read(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;

@@ -5,18 +5,20 @@ use extendr_api::Result;
 use extendr_api::prelude::*;
 
 use crate::automaton::AcAutomaton;
+use crate::r_strs;
 
 // Replace non-overlapping matches in each haystack.
 #[extendr]
 pub fn rust_ac_replace(
     ptr: ExternalPtr<AcAutomaton>,
-    doc: Vec<String>,
-    replace_with: Vec<String>,
+    doc: Strings,
+    replace_with: Strings,
 ) -> Result<Vec<String>> {
     let automaton = ptr.try_addr()?;
+    let replace_with = r_strs(&replace_with).collect::<Vec<_>>();
 
     let mut out = Vec::with_capacity(doc.len());
-    for haystack in &doc {
+    for haystack in r_strs(&doc) {
         let replaced = automaton
             .ac
             .try_replace_all(haystack, &replace_with)
@@ -31,13 +33,14 @@ pub fn rust_ac_replace(
 #[extendr]
 pub fn rust_ac_replace_file(
     ptr: ExternalPtr<AcAutomaton>,
-    path: Vec<String>,
-    output: Vec<String>,
-    replace_with: Vec<String>,
+    path: Strings,
+    output: Strings,
+    replace_with: Strings,
 ) -> Result<Vec<String>> {
     let automaton = ptr.try_addr()?;
+    let replace_with = r_strs(&replace_with).collect::<Vec<_>>();
 
-    for (input_path, output_path) in path.iter().zip(output.iter()) {
+    for (input_path, output_path) in r_strs(&path).zip(r_strs(&output)) {
         let haystack = fs::read(input_path)
             .map_err(|err| Error::Other(format!("failed to read `{input_path}`: {err}")))?;
         let replaced = automaton
@@ -48,20 +51,21 @@ pub fn rust_ac_replace_file(
             .map_err(|err| Error::Other(format!("failed to write `{output_path}`: {err}")))?;
     }
 
-    Ok(output)
+    Ok(r_strs(&output).map(str::to_owned).collect())
 }
 
 // Replace non-overlapping matches and write output files (stream).
 #[extendr]
 pub fn rust_ac_replace_file_stream(
     ptr: ExternalPtr<AcAutomaton>,
-    path: Vec<String>,
-    output: Vec<String>,
-    replace_with: Vec<String>,
+    path: Strings,
+    output: Strings,
+    replace_with: Strings,
 ) -> Result<Vec<String>> {
     let automaton = ptr.try_addr()?;
+    let replace_with = r_strs(&replace_with).collect::<Vec<_>>();
 
-    for (input_path, output_path) in path.iter().zip(output.iter()) {
+    for (input_path, output_path) in r_strs(&path).zip(r_strs(&output)) {
         let input = File::open(input_path)
             .map_err(|err| Error::Other(format!("failed to open `{input_path}`: {err}")))?;
         let output_file = File::create(output_path)
@@ -77,7 +81,7 @@ pub fn rust_ac_replace_file_stream(
             .map_err(|err| Error::Other(format!("failed to flush `{output_path}`: {err}")))?;
     }
 
-    Ok(output)
+    Ok(r_strs(&output).map(str::to_owned).collect())
 }
 
 extendr_module! {

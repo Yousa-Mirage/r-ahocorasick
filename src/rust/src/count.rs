@@ -4,18 +4,19 @@ use extendr_api::Result;
 use extendr_api::prelude::*;
 
 use crate::automaton::AcAutomaton;
+use crate::{count_to_r_int, r_strs};
 
 // Return the number of matches in each haystack.
 #[extendr]
 pub fn rust_ac_count(
     ptr: ExternalPtr<AcAutomaton>,
-    doc: Vec<String>,
+    doc: Strings,
     overlapping: bool,
 ) -> Result<Vec<i32>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(doc.len());
 
-    for haystack in &doc {
+    for haystack in r_strs(&doc) {
         let count = if overlapping {
             let matches = automaton
                 .ac
@@ -30,7 +31,7 @@ pub fn rust_ac_count(
             matches.count()
         };
 
-        out.push(count as i32);
+        out.push(count_to_r_int(count, "A document")?);
     }
 
     Ok(out)
@@ -40,13 +41,13 @@ pub fn rust_ac_count(
 #[extendr]
 pub fn rust_ac_count_file(
     ptr: ExternalPtr<AcAutomaton>,
-    path: Vec<String>,
+    path: Strings,
     overlapping: bool,
 ) -> Result<Vec<i32>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(path.len());
 
-    for file_path in &path {
+    for file_path in r_strs(&path) {
         let haystack = fs::read(file_path)
             .map_err(|err| Error::Other(format!("failed to read `{file_path}`: {err}")))?;
 
@@ -64,7 +65,7 @@ pub fn rust_ac_count_file(
             matches.count()
         };
 
-        out.push(count as i32);
+        out.push(count_to_r_int(count, &format!("`{file_path}`"))?);
     }
 
     Ok(out)
@@ -72,14 +73,11 @@ pub fn rust_ac_count_file(
 
 // Return the number of non-overlapping matches in each file (stream).
 #[extendr]
-pub fn rust_ac_count_file_stream(
-    ptr: ExternalPtr<AcAutomaton>,
-    path: Vec<String>,
-) -> Result<Vec<i32>> {
+pub fn rust_ac_count_file_stream(ptr: ExternalPtr<AcAutomaton>, path: Strings) -> Result<Vec<i32>> {
     let automaton = ptr.try_addr()?;
     let mut out = Vec::with_capacity(path.len());
 
-    for file_path in &path {
+    for file_path in r_strs(&path) {
         let file = File::open(file_path)
             .map_err(|err| Error::Other(format!("failed to open `{file_path}`: {err}")))?;
         let matches = automaton
@@ -87,14 +85,14 @@ pub fn rust_ac_count_file_stream(
             .try_stream_find_iter(file)
             .map_err(|err| Error::Other(err.to_string()))?;
 
-        let mut count = 0;
+        let mut count = 0usize;
 
         for mat in matches {
             mat.map_err(|err| Error::Other(err.to_string()))?;
             count += 1;
         }
 
-        out.push(count);
+        out.push(count_to_r_int(count, &format!("`{file_path}`"))?);
     }
 
     Ok(out)

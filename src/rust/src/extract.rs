@@ -5,13 +5,13 @@ use extendr_api::Result;
 use extendr_api::prelude::*;
 
 use crate::automaton::AcAutomaton;
-use crate::collect_raw_matches;
+use crate::{collect_raw_matches, r_strs};
 
 // Return matched text and pattern ids for each haystack.
 #[extendr]
 pub fn rust_ac_extract(
     ptr: ExternalPtr<AcAutomaton>,
-    doc: Vec<String>,
+    doc: Strings,
     doc_ids: Vec<i32>,
     overlapping: bool,
 ) -> Result<List> {
@@ -21,7 +21,7 @@ pub fn rust_ac_extract(
     let mut out_pattern_id = Vec::new();
     let mut out_matches = Vec::new();
 
-    for (haystack, doc_id) in doc.iter().zip(doc_ids.iter()) {
+    for (haystack, doc_id) in r_strs(&doc).zip(doc_ids.iter()) {
         let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
 
         for raw_match in raw_matches {
@@ -47,7 +47,7 @@ pub fn rust_ac_extract(
 #[extendr]
 pub fn rust_ac_extract_file(
     ptr: ExternalPtr<AcAutomaton>,
-    path: Vec<String>,
+    path: Strings,
     overlapping: bool,
 ) -> Result<List> {
     let automaton = ptr.try_addr()?;
@@ -56,7 +56,7 @@ pub fn rust_ac_extract_file(
     let mut out_pattern_id = Vec::new();
     let mut out_matches = Vec::new();
 
-    for (file_index, file_path) in path.iter().enumerate() {
+    for (file_index, file_path) in r_strs(&path).enumerate() {
         let file_id = (file_index + 1) as i32;
 
         let haystack = fs::read(file_path)
@@ -93,17 +93,14 @@ pub fn rust_ac_extract_file(
 
 // Return matched text in each file (stream).
 #[extendr]
-pub fn rust_ac_extract_file_stream(
-    ptr: ExternalPtr<AcAutomaton>,
-    path: Vec<String>,
-) -> Result<List> {
+pub fn rust_ac_extract_file_stream(ptr: ExternalPtr<AcAutomaton>, path: Strings) -> Result<List> {
     let automaton = ptr.try_addr()?;
 
     let mut out_file_id = Vec::new();
     let mut out_pattern_id = Vec::new();
     let mut out_matches = Vec::new();
 
-    for (file_index, file_path) in path.iter().enumerate() {
+    for (file_index, file_path) in r_strs(&path).enumerate() {
         let file_id = (file_index + 1) as i32;
         let file = File::open(file_path)
             .map_err(|err| Error::Other(format!("failed to open `{file_path}`: {err}")))?;

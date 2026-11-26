@@ -29,6 +29,7 @@ coverage/
 
 # Editor and OS files.
 .vscode/
+.zed/
 .idea/
 .DS_Store
 *~

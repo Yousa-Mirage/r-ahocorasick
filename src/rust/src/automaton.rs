@@ -2,6 +2,8 @@ use aho_corasick::{AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, MatchKind};
 use extendr_api::Result;
 use extendr_api::prelude::*;
 
+use crate::r_strs;
+
 // The Aho-Corasick automaton and its metadata.
 pub(crate) struct AcAutomaton {
     pub(crate) ac: AhoCorasick,
@@ -54,7 +56,7 @@ pub(crate) fn implementation_name(implementation: AhoCorasickKind) -> &'static s
 // Build an Aho-Corasick automaton.
 #[extendr]
 pub fn rust_ac_build(
-    patterns: Vec<String>,
+    patterns: Strings,
     match_kind: String,
     implementation: String,
     ascii_case_insensitive: bool,
@@ -66,7 +68,7 @@ pub fn rust_ac_build(
         .match_kind(parsed_match_kind)
         .kind(parsed_implementation)
         .ascii_case_insensitive(ascii_case_insensitive)
-        .build(patterns.iter().map(String::as_bytes))
+        .build(r_strs(&patterns))
         .map_err(|err| Error::Other(err.to_string()))?;
 
     let automaton = AcAutomaton {
