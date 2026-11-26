@@ -12,52 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  air-check:
-    name: air-check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install air
-        run: curl -LsSf https://github.com/posit-dev/air/releases/latest/download/air-installer.sh | sh
-
-      - name: Check R formatting
-        run: air format . --check
-
-  jarl-check:
-    name: jarl-check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: etiennebacher/setup-jarl@v0.1.0
-
-  spelling-check:
-    name: spelling-check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
-
-      - name: Spell check
-        run: |
-          install.packages(c("spelling", "cli", "rlang"))
-          options(crayon.enabled = TRUE)
-          spelling_mistakes <- spelling::spell_check_package()
-          cli::cli_rule()
-          if (length(spelling_mistakes$word) > 0L) {
-            print(spelling_mistakes)
-            rlang::abort("Spelling errors found. Either correct them or update `inst/WORDLIST` using `spelling::update_wordlist()`.")
-          } else {
-            cli::cli_alert_success("No spelling errors found.")
-          }
-          cli::cli_rule()
-        shell: Rscript {0}
-
-  rust-check:
-    name: rust-check
+  code-quality-check:
+    name: code-quality-check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -75,9 +31,39 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src/rust -> target
+          cache-on-failure: true
+
+      - name: Install air
+        uses: posit-dev/setup-air@v1
+
+      - name: Check R formatting
+        if: ${{ !cancelled() }}
+        run: air format . --check
+
+      - name: Lint R code with jarl
+        if: ${{ !cancelled() }}
+        uses: etiennebacher/setup-jarl@v0.1.0
+
+      - name: Spell check
+        if: ${{ !cancelled() }}
+        run: |
+          install.packages(c("spelling", "cli", "rlang"))
+          options(crayon.enabled = TRUE)
+          spelling_mistakes <- spelling::spell_check_package()
+          cli::cli_rule()
+          if (length(spelling_mistakes$word) > 0L) {
+            print(spelling_mistakes)
+            rlang::abort("Spelling errors found. Either correct them or update `inst/WORDLIST` using `spelling::update_wordlist()`.")
+          } else {
+            cli::cli_alert_success("No spelling errors found.")
+          }
+          cli::cli_rule()
+        shell: Rscript {0}
 
       - name: Check Rust formatting
+        if: ${{ !cancelled() }}
         run: cargo fmt --manifest-path src/rust/Cargo.toml --check
 
       - name: Run clippy
+        if: ${{ !cancelled() }}
         run: cargo clippy --manifest-path src/rust/Cargo.toml
