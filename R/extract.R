@@ -95,19 +95,12 @@ ac_extract <- function(
   }
 
   patterns <- unname(ac$patterns[raw$pattern_id])
-  runs <- rle(raw$doc_id)
-  ends <- cumsum(runs$lengths)
-  starts <- ends - runs$lengths + 1L
-
-  for (i in seq_along(starts)) {
-    rows <- seq.int(starts[[i]], ends[[i]])
-    out[[runs$values[[i]]]] <- new_extract_result(
-      raw$matches[rows],
-      patterns[rows]
-    )
-  }
-
-  out
+  split_by_doc(
+    out,
+    raw$doc_id,
+    list(matches = raw$matches, patterns = patterns),
+    new_extract_result
+  )
 }
 
 #' Extract pattern matches from files
@@ -169,19 +162,12 @@ ac_extract_file <- function(
   }
 
   patterns <- unname(ac$patterns[raw$pattern_id])
-  runs <- rle(raw$file_id)
-  ends <- cumsum(runs$lengths)
-  starts <- ends - runs$lengths + 1L
-
-  for (i in seq_along(starts)) {
-    rows <- seq.int(starts[[i]], ends[[i]])
-    out[[runs$values[[i]]]] <- new_extract_result(
-      raw$matches[rows],
-      patterns[rows]
-    )
-  }
-
-  out
+  split_by_doc(
+    out,
+    raw$file_id,
+    list(matches = raw$matches, patterns = patterns),
+    new_extract_result
+  )
 }
 
 #' Extract pattern matches as a data frame
@@ -286,13 +272,11 @@ new_extract_result <- function(
   matches = character(),
   patterns = character()
 ) {
-  structure(
+  new_df(
     list(
       matches = matches,
       patterns = patterns
-    ),
-    class = "data.frame",
-    row.names = .set_row_names(length(matches))
+    )
   )
 }
 

@@ -95,20 +95,12 @@ ac_locate <- function(
     return(out)
   }
 
-  runs <- rle(raw$doc_id)
-  ends <- cumsum(runs$lengths)
-  starts <- ends - runs$lengths + 1L
-
-  for (i in seq_along(starts)) {
-    rows <- seq.int(starts[[i]], ends[[i]])
-    out[[runs$values[[i]]]] <- new_locate_result(
-      raw$pattern_id[rows],
-      raw$start[rows],
-      raw$end[rows]
-    )
-  }
-
-  out
+  split_by_doc(
+    out,
+    raw$doc_id,
+    list(pattern_id = raw$pattern_id, start = raw$start, end = raw$end),
+    new_locate_result
+  )
 }
 
 #' Locate pattern matches in files
@@ -166,20 +158,12 @@ ac_locate_file <- function(ac, path, ..., overlapping = FALSE) {
     return(out)
   }
 
-  runs <- rle(raw$file_id)
-  ends <- cumsum(runs$lengths)
-  starts <- ends - runs$lengths + 1L
-
-  for (i in seq_along(starts)) {
-    rows <- seq.int(starts[[i]], ends[[i]])
-    out[[runs$values[[i]]]] <- new_locate_result(
-      raw$pattern_id[rows],
-      raw$start[rows],
-      raw$end[rows]
-    )
-  }
-
-  out
+  split_by_doc(
+    out,
+    raw$file_id,
+    list(pattern_id = raw$pattern_id, start = raw$start, end = raw$end),
+    new_locate_result
+  )
 }
 
 #' Locate pattern matches with byte offsets
@@ -379,14 +363,12 @@ new_locate_result <- function(
   start = integer(),
   end = integer()
 ) {
-  structure(
+  new_df(
     list(
       pattern_id = pattern_id,
       start = start,
       end = end
-    ),
-    class = "data.frame",
-    row.names = .set_row_names(length(pattern_id))
+    )
   )
 }
 

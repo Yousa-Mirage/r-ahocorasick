@@ -25,6 +25,8 @@
 
 - Documents are no longer copied when they are passed to Rust, which roughly
   halves peak memory use when searching long texts.
+- `ac_locate()`, `ac_extract()`, `ac_locate_file()` and `ac_extract_file()`
+  build their per-document results about twice as fast.
 
 # ahocorasick 0.2.0
 

@@ -385,3 +385,34 @@ test_that("ac_locate errors when missing documents are disallowed", {
     ac_locate_bytes(ac, c("hello", NA_character_), na = "error")
   )
 })
+
+test_that("ac_locate and ac_extract group many matches per document", {
+  # More than 16 matches per document on average takes the row-slicing path in
+  # split_by_doc(); documents with few matches take the split() path.
+  ac <- ac_build("ab")
+  many <- c(strrep("ab ", 40), NA, "xx", strrep("ab ", 30))
+  few <- c("ab", NA, "xx", "ab ab")
+
+  for (doc in list(many, few)) {
+    n <- lengths(regmatches(doc, gregexpr("ab", doc)))
+    n[is.na(doc)] <- 0L
+    loc <- ac_locate(ac, doc)
+    ext <- ac_extract(ac, doc)
+
+    for (i in seq_along(doc)) {
+      if (is.na(doc[[i]])) {
+        next
+      }
+      starts <- if (n[[i]] > 0L) {
+        seq(1L, by = 3L, length.out = n[[i]])
+      } else {
+        integer()
+      }
+      expect_equal(loc[[i]]$pattern_id, rep(1L, n[[i]]))
+      expect_equal(loc[[i]]$start, starts)
+      expect_equal(loc[[i]]$end, starts + 1L)
+      expect_equal(ext[[i]]$matches, rep("ab", n[[i]]))
+      expect_equal(ext[[i]]$patterns, rep("ab", n[[i]]))
+    }
+  }
+})

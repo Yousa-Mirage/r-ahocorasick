@@ -124,6 +124,62 @@ as_valid_utf8 <- function(
   x
 }
 
+# Turn a named list of equal-length columns into a data frame. Much cheaper than
+# `data.frame()` or `structure()`, which matters when building one data frame
+# per document.
+new_df <- function(cols) {
+  # Compact row names, as `.set_row_names()` creates, without the extra call.
+  n <- length(cols[[1L]])
+  attr(cols, "row.names") <- if (n > 0L) {
+    c(NA_integer_, -n)
+  } else {
+    integer()
+  }
+  class(cols) <- "data.frame"
+  cols
+}
+
+# Store one data frame per document (or file) in `out`, built from the flat
+# match columns returned by Rust.
+#
+# `ids` gives the 1-based position in `out` of each match and must be sorted,
+# which holds because Rust searches documents in order. `cols` is a named list
+# of match columns, and `build` creates one data frame from one document's
+# slice of them; its arguments must be named like `cols`. Elements of `out`
+# without matches are left unchanged.
+split_by_doc <- function(out, ids, cols, build) {
+  if (length(ids) == 0L) {
+    return(out)
+  }
+
+  runs <- rle(ids)
+  n_docs <- length(runs$lengths)
+
+  if (length(ids) <= 16L * n_docs) {
+    # Many documents with few matches each: group every column in one
+    # `split()` call. The cost is then dominated by calling `build()` once per
+    # document, which is fastest with named arguments (not `...`).
+    groups <- structure(
+      rep.int(seq_len(n_docs), runs$lengths),
+      levels = as.character(seq_len(n_docs)),
+      class = "factor"
+    )
+    pieces <- lapply(cols, split.default, f = groups)
+    out[runs$values] <- .mapply(build, pieces, NULL)
+  } else {
+    # Few documents with many matches each: a grouping factor as long as the
+    # matches would cost more than it saves, so slice contiguous rows instead.
+    ends <- cumsum(runs$lengths)
+    starts <- ends - runs$lengths + 1L
+    for (i in seq_len(n_docs)) {
+      rows <- seq.int(starts[[i]], ends[[i]])
+      out[[runs$values[[i]]]] <- do.call(build, lapply(cols, `[`, rows))
+    }
+  }
+
+  out
+}
+
 compact_rows <- function(rows, empty) {
   rows <- rows[!vapply(rows, is.null, logical(1))]
   if (length(rows) == 0L) {
