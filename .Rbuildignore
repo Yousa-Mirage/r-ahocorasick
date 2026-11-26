@@ -5,6 +5,7 @@
 ^\.vscode$
 ^\.github$
 ^\.gitignore$
+^\.jj$
 ^_pkgdown\.yml$
 ^pkgdown$
 ^bench$
