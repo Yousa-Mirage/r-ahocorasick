@@ -88,7 +88,8 @@ ac_extract <- function(
 
   # Extract matches by Rust
   doc_ids <- as.integer(which(keep))
-  raw <- rust_ac_extract(ac$ptr, doc[keep], doc_ids, overlapping)
+  with_text <- isTRUE(ac$info$ascii_case_insensitive)
+  raw <- rust_ac_extract(ac$ptr, doc[keep], doc_ids, overlapping, with_text)
 
   if (length(raw$doc_id) == 0L) {
     return(out)
@@ -98,7 +99,10 @@ ac_extract <- function(
   split_by_doc(
     out,
     raw$doc_id,
-    list(matches = raw$matches, patterns = patterns),
+    list(
+      matches = if (with_text) raw$matches else patterns,
+      patterns = patterns
+    ),
     new_extract_result
   )
 }
@@ -151,10 +155,11 @@ ac_extract_file <- function(
   out <- rep(list(new_extract_result()), length(path))
   names(out) <- names(path)
 
+  with_text <- isTRUE(ac$info$ascii_case_insensitive)
   raw <- if (stream) {
-    rust_ac_extract_file_stream(ac$ptr, unname(path))
+    rust_ac_extract_file_stream(ac$ptr, unname(path), with_text)
   } else {
-    rust_ac_extract_file(ac$ptr, unname(path), overlapping)
+    rust_ac_extract_file(ac$ptr, unname(path), overlapping, with_text)
   }
 
   if (length(raw$file_id) == 0L) {
@@ -165,7 +170,10 @@ ac_extract_file <- function(
   split_by_doc(
     out,
     raw$file_id,
-    list(matches = raw$matches, patterns = patterns),
+    list(
+      matches = if (with_text) raw$matches else patterns,
+      patterns = patterns
+    ),
     new_extract_result
   )
 }
@@ -231,20 +239,23 @@ ac_extract_df <- function(
   keep <- !missing
 
   out <- if (any(keep)) {
+    with_text <- isTRUE(ac$info$ascii_case_insensitive)
     raw <- rust_ac_extract(
       ac$ptr,
       doc[keep],
       as.integer(which(keep)),
-      overlapping
+      overlapping,
+      with_text
     )
 
     if (length(raw$doc_id) == 0L) {
       empty_extract_df()
     } else {
+      patterns <- unname(ac$patterns[raw$pattern_id])
       data.frame(
         doc_id = raw$doc_id,
-        matches = raw$matches,
-        patterns = unname(ac$patterns[raw$pattern_id])
+        matches = if (with_text) raw$matches else patterns,
+        patterns = patterns
       )
     }
   } else {

@@ -7,6 +7,12 @@ use extendr_api::prelude::*;
 use crate::automaton::AcAutomaton;
 use crate::{collect_raw_matches, r_strs};
 
+// With `with_text = FALSE` the functions below return an empty `matches`
+// vector. Creating one R string per match is the most expensive part of
+// extraction, and for a case-sensitive automaton the matched text always equals
+// the pattern, so the R layer can take it from the stored patterns instead.
+// Case-insensitive matches can differ in case and need `with_text = TRUE`.
+
 // Return matched text and pattern ids for each haystack.
 #[extendr]
 pub fn rust_ac_extract(
@@ -14,6 +20,7 @@ pub fn rust_ac_extract(
     doc: Strings,
     doc_ids: Vec<i32>,
     overlapping: bool,
+    with_text: bool,
 ) -> Result<List> {
     let automaton = ptr.try_addr()?;
 
@@ -25,12 +32,14 @@ pub fn rust_ac_extract(
         let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
 
         for raw_match in raw_matches {
-            let matched = haystack
-                .get(raw_match.start_byte..raw_match.end_byte)
-                .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
+            if with_text {
+                let matched = haystack
+                    .get(raw_match.start_byte..raw_match.end_byte)
+                    .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
+                out_matches.push(matched.to_string());
+            }
             out_doc_id.push(*doc_id);
             out_pattern_id.push(raw_match.pattern_id);
-            out_matches.push(matched.to_string());
         }
     }
 
@@ -49,6 +58,7 @@ pub fn rust_ac_extract_file(
     ptr: ExternalPtr<AcAutomaton>,
     path: Strings,
     overlapping: bool,
+    with_text: bool,
 ) -> Result<List> {
     let automaton = ptr.try_addr()?;
 
@@ -65,6 +75,12 @@ pub fn rust_ac_extract_file(
         let raw_matches = collect_raw_matches(&automaton.ac, &haystack, overlapping)?;
 
         for raw_match in raw_matches {
+            out_file_id.push(file_id);
+            out_pattern_id.push(raw_match.pattern_id);
+            if !with_text {
+                continue;
+            }
+
             let matched_bytes = haystack
                 .get(raw_match.start_byte..raw_match.end_byte)
                 .ok_or_else(|| Error::Other("match offsets are out of bounds".into()))?;
@@ -75,9 +91,6 @@ pub fn rust_ac_extract_file(
                     ))
                 })?
                 .to_owned();
-
-            out_file_id.push(file_id);
-            out_pattern_id.push(raw_match.pattern_id);
             out_matches.push(matched);
         }
     }
@@ -93,7 +106,11 @@ pub fn rust_ac_extract_file(
 
 // Return matched text in each file (stream).
 #[extendr]
-pub fn rust_ac_extract_file_stream(ptr: ExternalPtr<AcAutomaton>, path: Strings) -> Result<List> {
+pub fn rust_ac_extract_file_stream(
+    ptr: ExternalPtr<AcAutomaton>,
+    path: Strings,
+    with_text: bool,
+) -> Result<List> {
     let automaton = ptr.try_addr()?;
 
     let mut out_file_id = Vec::new();
@@ -108,7 +125,12 @@ pub fn rust_ac_extract_file_stream(ptr: ExternalPtr<AcAutomaton>, path: Strings)
         automaton
             .ac
             .try_stream_replace_all_with(file, io::sink(), |mat, matched_bytes, _wtr| {
-                let pattern_id = mat.pattern().as_i32() + 1;
+                out_file_id.push(file_id);
+                out_pattern_id.push(mat.pattern().as_i32() + 1);
+                if !with_text {
+                    return Ok(());
+                }
+
                 let matched = std::str::from_utf8(matched_bytes)
                     .map_err(|err| {
                         io::Error::new(
@@ -117,9 +139,6 @@ pub fn rust_ac_extract_file_stream(ptr: ExternalPtr<AcAutomaton>, path: Strings)
                         )
                     })?
                     .to_owned();
-
-                out_file_id.push(file_id);
-                out_pattern_id.push(pattern_id);
                 out_matches.push(matched);
 
                 Ok(())

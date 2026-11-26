@@ -27,6 +27,8 @@
   halves peak memory use when searching long texts.
 - `ac_locate()`, `ac_extract()`, `ac_locate_file()` and `ac_extract_file()`
   build their per-document results about twice as fast.
+- `ac_extract()`, `ac_extract_df()` and `ac_extract_file()` no longer create a
+  new string for every match when the automaton is case-sensitive.
 
 # ahocorasick 0.2.0
 

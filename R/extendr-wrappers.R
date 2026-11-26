@@ -23,11 +23,11 @@ rust_ac_detect_file <- function(ptr, path) .Call(wrap__rust_ac_detect_file, ptr,
 
 rust_ac_detect_file_stream <- function(ptr, path) .Call(wrap__rust_ac_detect_file_stream, ptr, path)
 
-rust_ac_extract <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_extract, ptr, doc, doc_ids, overlapping)
+rust_ac_extract <- function(ptr, doc, doc_ids, overlapping, with_text) .Call(wrap__rust_ac_extract, ptr, doc, doc_ids, overlapping, with_text)
 
-rust_ac_extract_file <- function(ptr, path, overlapping) .Call(wrap__rust_ac_extract_file, ptr, path, overlapping)
+rust_ac_extract_file <- function(ptr, path, overlapping, with_text) .Call(wrap__rust_ac_extract_file, ptr, path, overlapping, with_text)
 
-rust_ac_extract_file_stream <- function(ptr, path) .Call(wrap__rust_ac_extract_file_stream, ptr, path)
+rust_ac_extract_file_stream <- function(ptr, path, with_text) .Call(wrap__rust_ac_extract_file_stream, ptr, path, with_text)
 
 rust_ac_locate <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_locate, ptr, doc, doc_ids, overlapping)
 
