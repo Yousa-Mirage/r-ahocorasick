@@ -12,8 +12,14 @@ test_that("ac_extract returns matches and patterns per document", {
       patterns = c("hello", "world", "hello")
     )
   )
-  expect_equal(hits[[2]], data.frame(matches = character(), patterns = character()))
-  expect_equal(hits[[3]], data.frame(matches = NA_character_, patterns = NA_character_))
+  expect_equal(
+    hits[[2]],
+    data.frame(matches = character(), patterns = character())
+  )
+  expect_equal(
+    hits[[3]],
+    data.frame(matches = NA_character_, patterns = NA_character_)
+  )
 })
 
 test_that("ac_extract_df returns one row per match", {
@@ -93,8 +99,14 @@ test_that("ac_extract can treat missing documents as empty matches", {
   hits <- ac_extract(ac, c("hello", NA_character_, "world"), na = "empty")
 
   expect_equal(hits[[1]], data.frame(matches = "hello", patterns = "hello"))
-  expect_equal(hits[[2]], data.frame(matches = character(), patterns = character()))
-  expect_equal(hits[[3]], data.frame(matches = character(), patterns = character()))
+  expect_equal(
+    hits[[2]],
+    data.frame(matches = character(), patterns = character())
+  )
+  expect_equal(
+    hits[[3]],
+    data.frame(matches = character(), patterns = character())
+  )
 })
 
 test_that("ac_extract_file returns matches and patterns per file", {
@@ -117,7 +129,10 @@ test_that("ac_extract_file returns matches and patterns per file", {
       patterns = c("hello", "world", "hello")
     )
   )
-  expect_equal(hits[[2]], data.frame(matches = character(), patterns = character()))
+  expect_equal(
+    hits[[2]],
+    data.frame(matches = character(), patterns = character())
+  )
 })
 
 test_that("ac_extract_file keeps actual matched text", {

@@ -138,7 +138,13 @@ ac_extract <- function(
 #' writeLines("hello world", path)
 #' ac_extract_file(ac, path)
 #' @export
-ac_extract_file <- function(ac, path, ..., stream = FALSE, overlapping = FALSE) {
+ac_extract_file <- function(
+  ac,
+  path,
+  ...,
+  stream = FALSE,
+  overlapping = FALSE
+) {
   rlang::check_dots_empty()
 
   ac <- validate_ac_automaton(ac)

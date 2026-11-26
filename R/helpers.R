@@ -39,7 +39,11 @@ print.ac_automaton <- function(x, ...) {
   cat("implementation:", info$implementation, "\n")
   cat(
     "case:",
-    if (isTRUE(info$ascii_case_insensitive)) "ASCII-insensitive" else "sensitive",
+    if (isTRUE(info$ascii_case_insensitive)) {
+      "ASCII-insensitive"
+    } else {
+      "sensitive"
+    },
     "\n"
   )
   invisible(x)
@@ -188,7 +192,11 @@ validate_match_kind_for_file <- function(ac_automaton) {
   ac_automaton
 }
 
-validate_file_overlapping <- function(ac_automaton, overlapping, stream = FALSE) {
+validate_file_overlapping <- function(
+  ac_automaton,
+  overlapping,
+  stream = FALSE
+) {
   if (!checkmate::test_flag(overlapping)) {
     cli::cli_abort(
       "{.arg overlapping} must be a logical value.",

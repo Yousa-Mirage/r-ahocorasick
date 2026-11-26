@@ -40,17 +40,29 @@ if (length(missing_packages) > 0L) {
   )
 }
 
-suppressPackageStartupMessages(pkgload::load_all(root_dir, quiet = TRUE, debug = FALSE, compile = TRUE))
+suppressPackageStartupMessages(pkgload::load_all(
+  root_dir,
+  quiet = TRUE,
+  debug = FALSE,
+  compile = TRUE
+))
 
 iterations <- as.integer(Sys.getenv("BENCH_ITERATIONS", "5"))
 check_docs_n <- as.integer(Sys.getenv("BENCH_CHECK_DOCS_N", "20"))
-stop_on_mismatch <- tolower(Sys.getenv("BENCH_STOP_ON_MISMATCH", "true")) %in% c("true", "1", "yes")
+stop_on_mismatch <- tolower(Sys.getenv("BENCH_STOP_ON_MISMATCH", "true")) %in%
+  c("true", "1", "yes")
 
 inputs <- readRDS(input_path)
 documents <- inputs$documents
 pattern_meta <- inputs$pattern_meta
 cases <- inputs$cases
-methods <- c("ahocorasick", "polars", "AhoCorasickTrie", "base_for", "tidyverse_stringr")
+methods <- c(
+  "ahocorasick",
+  "polars",
+  "AhoCorasickTrie",
+  "base_for",
+  "tidyverse_stringr"
+)
 tasks <- c("detect", "count", "extract")
 
 get_docs <- function(corpus_id, n = Inf) {
@@ -85,7 +97,10 @@ has_self_overlap <- function(pattern) {
 }
 
 supports_method <- function(method, docs, patterns) {
-  if (identical(method, "AhoCorasickTrie") && (!is_ascii(docs) || !is_ascii(patterns))) {
+  if (
+    identical(method, "AhoCorasickTrie") &&
+      (!is_ascii(docs) || !is_ascii(patterns))
+  ) {
     return(list(supported = FALSE, reason = "unsupported_ascii_only"))
   }
   list(supported = TRUE, reason = NA_character_)
@@ -240,7 +255,9 @@ make_backend <- function(method, docs, patterns) {
       list(
         detect = function() ac_detect(ac, docs, na = "false"),
         count = function() ac_count(ac, docs, overlapping = TRUE, na = "zero"),
-        extract = function() ac_extract_df(ac, docs, overlapping = TRUE, na = "omit"),
+        extract = function() {
+          ac_extract_df(ac, docs, overlapping = TRUE, na = "omit")
+        },
         detect_values = identity,
         count_values = identity,
         extract_counts = function(x) extract_counts_long(x, length(docs)),
@@ -309,7 +326,9 @@ make_backend <- function(method, docs, patterns) {
           counts <- lapply(patterns, function(pattern) {
             stringr::str_count(tbl$doc, stringr::fixed(pattern))
           })
-          as.integer(dplyr::mutate(tbl, n_matches = Reduce(`+`, counts))$n_matches)
+          as.integer(
+            dplyr::mutate(tbl, n_matches = Reduce(`+`, counts))$n_matches
+          )
         },
         extract = function() {
           rows <- lapply(patterns, function(pattern) {
@@ -419,9 +438,12 @@ for (case_index in seq_len(nrow(cases))) {
       case_id = case$case_id,
       method = method,
       supported = TRUE,
-      detect_equal = detect_values$ok && same_logical(detect_values$value, reference_detect),
-      count_equal = count_values$ok && same_integer(count_values$value, reference_count),
-      extract_equal = extract_counts$ok && same_integer(extract_counts$value, reference_extract_counts),
+      detect_equal = detect_values$ok &&
+        same_logical(detect_values$value, reference_detect),
+      count_equal = count_values$ok &&
+        same_integer(count_values$value, reference_count),
+      extract_equal = extract_counts$ok &&
+        same_integer(extract_counts$value, reference_extract_counts),
       detect_error = detect_values$error,
       count_error = count_values$error,
       extract_error = extract_counts$error,
@@ -444,7 +466,10 @@ failed <- correctness$supported &
     !(correctness$count_equal %in% TRUE) |
     !(correctness$extract_equal %in% TRUE))
 if (any(failed) && stop_on_mismatch) {
-  stop("Correctness check failed. See bench/output/correctness.csv.", call. = FALSE)
+  stop(
+    "Correctness check failed. See bench/output/correctness.csv.",
+    call. = FALSE
+  )
 }
 
 time_expr <- function(fun, iterations) {
@@ -608,7 +633,10 @@ write.csv(
   row.names = FALSE,
   fileEncoding = "UTF-8"
 )
-writeLines(capture.output(utils::sessionInfo()), file.path(output_dir, "session-info.txt"))
+writeLines(
+  capture.output(utils::sessionInfo()),
+  file.path(output_dir, "session-info.txt")
+)
 
 fmt_num <- function(x, digits = 2) {
   ifelse(is.na(x), "NA", formatC(x, digits = digits, format = "f"))
@@ -620,7 +648,9 @@ markdown_table <- function(df) {
   }
   header <- paste0("| ", paste(names(df), collapse = " | "), " |")
   rule <- paste0("| ", paste(rep("---", ncol(df)), collapse = " | "), " |")
-  body <- apply(df, 1L, function(row) paste0("| ", paste(row, collapse = " | "), " |"))
+  body <- apply(df, 1L, function(row) {
+    paste0("| ", paste(row, collapse = " | "), " |")
+  })
   c(header, rule, body)
 }
 

@@ -79,7 +79,11 @@ make_corpus <- function(files, corpus_id, transform, chunk_size, n) {
   })
 
   out <- do.call(rbind, rows)
-  out <- out[seq_len(nrow(out)) %in% select_evenly(seq_len(nrow(out)), n), , drop = FALSE]
+  out <- out[
+    seq_len(nrow(out)) %in% select_evenly(seq_len(nrow(out)), n),
+    ,
+    drop = FALSE
+  ]
   row.names(out) <- NULL
   out$doc_id <- sprintf("%s_%04d", corpus_id, seq_len(nrow(out)))
   out[, c("corpus_id", "doc_id", "source", "chunk_id", "doc")]
@@ -161,14 +165,30 @@ if (length(english_files) != 3L || length(chinese_files) == 0L) {
   stop("Unexpected benchmark data layout under bench/data/.", call. = FALSE)
 }
 
-en_docs <- make_corpus(english_files, "en_docs", normalize_english, chunk_chars, docs_n)
-zh_docs <- make_corpus(chinese_files, "zh_docs", normalize_utf8, chunk_chars, docs_n)
+en_docs <- make_corpus(
+  english_files,
+  "en_docs",
+  normalize_english,
+  chunk_chars,
+  docs_n
+)
+zh_docs <- make_corpus(
+  chinese_files,
+  "zh_docs",
+  normalize_utf8,
+  chunk_chars,
+  docs_n
+)
 
 mix_n <- min(nrow(en_docs), nrow(zh_docs), docs_n)
 mix_docs <- data.frame(
   corpus_id = "mix_docs",
   doc_id = sprintf("mix_docs_%04d", seq_len(mix_n)),
-  source = paste(en_docs$source[seq_len(mix_n)], zh_docs$source[seq_len(mix_n)], sep = " + "),
+  source = paste(
+    en_docs$source[seq_len(mix_n)],
+    zh_docs$source[seq_len(mix_n)],
+    sep = " + "
+  ),
   chunk_id = seq_len(mix_n),
   doc = paste(
     substring(en_docs$doc[seq_len(mix_n)], 1L, floor(chunk_chars / 2L)),
@@ -180,17 +200,26 @@ mix_docs <- data.frame(
 documents <- rbind(en_docs, zh_docs, mix_docs)
 row.names(documents) <- NULL
 
-english_words <- extract_regex(paste(en_docs$doc, collapse = " "), "\\b[a-z]{3,14}\\b")
+english_words <- extract_regex(
+  paste(en_docs$doc, collapse = " "),
+  "\\b[a-z]{3,14}\\b"
+)
 english_freq <- sort(table(english_words), decreasing = TRUE)
 
 en_small_common <- select_patterns(names(english_freq), 32L)
-rare_pool <- names(sort(english_freq[nchar(names(english_freq)) >= 7L & english_freq >= 2L]))
+rare_pool <- names(sort(english_freq[
+  nchar(names(english_freq)) >= 7L & english_freq >= 2L
+]))
 en_large_rare <- select_patterns(rare_pool, 256L, exclude = en_small_common)
 
 zh_pattern_docs <- zh_docs$doc[seq_len(min(nrow(zh_docs), pattern_docs_n))]
 zh_ngrams <- make_han_ngrams(paste(zh_pattern_docs, collapse = ""))
 zh_freq <- sort(table(zh_ngrams), decreasing = TRUE)
-zh_candidates <- names(zh_freq)[vapply(names(zh_freq), is_han_string, logical(1))]
+zh_candidates <- names(zh_freq)[vapply(
+  names(zh_freq),
+  is_han_string,
+  logical(1)
+)]
 zh_small_common <- select_patterns(zh_candidates, 32L)
 
 pattern_sets <- list(
@@ -217,9 +246,19 @@ pattern_meta <- do.call(
 row.names(pattern_meta) <- NULL
 
 cases <- data.frame(
-  case_id = c("en_small_common", "en_large_rare", "zh_small_common", "mix_medium"),
+  case_id = c(
+    "en_small_common",
+    "en_large_rare",
+    "zh_small_common",
+    "mix_medium"
+  ),
   corpus_id = c("en_docs", "en_docs", "zh_docs", "mix_docs"),
-  pattern_set_id = c("en_small_common", "en_large_rare", "zh_small_common", "mix_medium"),
+  pattern_set_id = c(
+    "en_small_common",
+    "en_large_rare",
+    "zh_small_common",
+    "mix_medium"
+  ),
   stringsAsFactors = FALSE
 )
 cases$docs_n <- vapply(
@@ -257,7 +296,12 @@ inputs <- list(
 )
 
 saveRDS(inputs, file.path(output_dir, "benchmark-inputs.rds"))
-write.csv(cases, file.path(output_dir, "cases.csv"), row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(
+  cases,
+  file.path(output_dir, "cases.csv"),
+  row.names = FALSE,
+  fileEncoding = "UTF-8"
+)
 write.csv(
   pattern_meta,
   file.path(output_dir, "pattern-sets.csv"),

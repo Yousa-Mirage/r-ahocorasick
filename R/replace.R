@@ -117,7 +117,12 @@ ac_replace_file <- function(
   output <- validate_replace_output_path(path, output)
 
   out <- if (stream) {
-    rust_ac_replace_file_stream(ac$ptr, unname(path), unname(output), replace_with)
+    rust_ac_replace_file_stream(
+      ac$ptr,
+      unname(path),
+      unname(output),
+      replace_with
+    )
   } else {
     rust_ac_replace_file(ac$ptr, unname(path), unname(output), replace_with)
   }

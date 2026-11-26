@@ -44,7 +44,14 @@ ac_build <- function(
   implementation <- rlang::arg_match(implementation)
   duplicate <- rlang::arg_match(duplicate)
 
-  if (!checkmate::test_character(patterns, any.missing = FALSE, min.len = 1L, min.chars = 1L)) {
+  if (
+    !checkmate::test_character(
+      patterns,
+      any.missing = FALSE,
+      min.len = 1L,
+      min.chars = 1L
+    )
+  ) {
     cli::cli_abort(
       "{.arg patterns} must be a character vector of non-empty strings with no missing values."
     )

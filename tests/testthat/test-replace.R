@@ -20,7 +20,10 @@ test_that("ac_replace can use one replacement for all patterns", {
 test_that("ac_replace supports UTF-8 matching", {
   ac_utf8 <- ac_build(c("世界", "😀"))
 
-  expect_equal(ac_replace(ac_utf8, "你好世界😀", c("world", "smile")), "你好worldsmile")
+  expect_equal(
+    ac_replace(ac_utf8, "你好世界😀", c("world", "smile")),
+    "你好worldsmile"
+  )
 })
 
 test_that("ac_replace supports ASCII case-insensitive matching", {
@@ -88,7 +91,10 @@ test_that("ac_replace_file writes default output paths", {
   output <- ac_replace_file(ac, path, c("sloth", "grey", "slow"))
   on.exit(unlink(c(path, output)), add = TRUE)
 
-  expect_equal(fs::path_real(fs::path_dir(output)), fs::path_real(fs::path_dir(path)))
+  expect_equal(
+    fs::path_real(fs::path_dir(output)),
+    fs::path_real(fs::path_dir(path))
+  )
   expect_equal(
     fs::path_file(output),
     paste0(tools::file_path_sans_ext(fs::path_file(path)), "_replaced.txt")
@@ -113,7 +119,10 @@ test_that("ac_replace_file writes explicit output paths", {
   result <- ac_replace_file(ac, paths, "x", output = outputs)
 
   expect_named(result, names(paths))
-  expect_equal(fs::path_real(fs::path_dir(unname(result))), fs::path_real(fs::path_dir(outputs)))
+  expect_equal(
+    fs::path_real(fs::path_dir(unname(result))),
+    fs::path_real(fs::path_dir(outputs))
+  )
   expect_equal(fs::path_file(unname(result)), fs::path_file(outputs))
   expect_equal(readLines(outputs[[1]]), "x x")
   expect_equal(readLines(outputs[[2]]), "nothing")
@@ -128,7 +137,13 @@ test_that("ac_replace_file supports UTF-8 matching", {
   writeLines("你好世界😀", path, useBytes = TRUE)
 
   ac_replace_file(ac, path, c("world", "smile"), output = output)
-  ac_replace_file(ac, path, c("world", "smile"), output = stream_output, stream = TRUE)
+  ac_replace_file(
+    ac,
+    path,
+    c("world", "smile"),
+    output = stream_output,
+    stream = TRUE
+  )
 
   expect_equal(readLines(output), "你好worldsmile")
   expect_equal(readLines(stream_output), "你好worldsmile")
