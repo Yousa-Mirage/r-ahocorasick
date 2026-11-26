@@ -57,3 +57,19 @@ test_that("ac_automaton validation catches invalid external pointers", {
     ac_info(ac)
   )
 })
+
+test_that("print shows a hint for automatons restored from disk", {
+  ac <- ac_build(c("hello", "world"))
+  path <- tempfile(fileext = ".rds")
+  on.exit(unlink(path), add = TRUE)
+  saveRDS(ac, path)
+  restored <- readRDS(path)
+
+  expect_snapshot({
+    print(ac)
+    print(restored)
+    print(structure(list(ptr = new("externalptr")), class = "ac_automaton"))
+    print(structure(list(), class = "ac_automaton"))
+  })
+  expect_identical(print(restored), restored)
+})

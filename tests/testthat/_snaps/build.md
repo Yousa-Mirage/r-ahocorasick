@@ -35,3 +35,26 @@
       ! `ac` contains an invalid Rust external pointer.
       i Rebuild it with `ac_build()`. External pointers cannot be restored across R sessions.
 
+# print shows a hint for automatons restored from disk
+
+    Code
+      print(ac)
+    Output
+      <ac_automaton>
+      patterns: 2 
+      match_kind: standard 
+      implementation: dfa 
+      case: sensitive 
+    Code
+      print(restored)
+    Output
+      <ac_automaton> (invalid pointer, rebuild with ac_build())
+    Code
+      print(structure(list(ptr = new("externalptr")), class = "ac_automaton"))
+    Output
+      <ac_automaton> (invalid pointer, rebuild with ac_build())
+    Code
+      print(structure(list(), class = "ac_automaton"))
+    Output
+      <ac_automaton> (invalid pointer, rebuild with ac_build())
+

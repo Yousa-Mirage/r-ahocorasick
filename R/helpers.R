@@ -32,7 +32,14 @@ ac_info <- function(ac) {
 
 #' @export
 print.ac_automaton <- function(x, ...) {
-  info <- ac_info(x)
+  # Printing must not fail: an automaton restored with `readRDS()` or loaded
+  # from a saved workspace keeps its R fields but loses its Rust pointer.
+  if (!has_valid_ac_pointer(x)) {
+    cat("<ac_automaton> (invalid pointer, rebuild with ac_build())\n")
+    return(invisible(x))
+  }
+
+  info <- x$info
   cat("<ac_automaton>\n")
   cat("patterns:", info$patterns_len, "\n")
   cat("match_kind:", info$match_kind, "\n")
@@ -55,6 +62,23 @@ length.ac_automaton <- function(x) {
   x$info$patterns_len
 }
 
+# Return whether `ac` holds a pointer to a live Rust automaton. Never errors.
+has_valid_ac_pointer <- function(ac) {
+  if (!is.list(ac)) {
+    return(FALSE)
+  }
+  ptr <- .subset2(ac, "ptr")
+  if (is.null(ptr)) {
+    return(FALSE)
+  }
+  isTRUE(
+    tryCatch(
+      rust_ac_is_valid(ptr),
+      error = function(cnd) FALSE
+    )
+  )
+}
+
 # Validate that an object is a properly constructed <ac_automaton>.
 validate_ac_automaton <- function(ac) {
   if (!inherits(ac, "ac_automaton")) {
@@ -63,11 +87,7 @@ validate_ac_automaton <- function(ac) {
   if (is.null(ac$ptr)) {
     cli::cli_abort("{.arg ac} must contain a non-null Rust external pointer.")
   }
-  valid <- tryCatch(
-    rust_ac_is_valid(ac$ptr),
-    error = function(cnd) FALSE
-  )
-  if (!isTRUE(valid)) {
+  if (!has_valid_ac_pointer(ac)) {
     cli::cli_abort(c(
       "{.arg ac} contains an invalid Rust external pointer.",
       "i" = "Rebuild it with {.fn ac_build}. External pointers cannot be restored across R sessions."
