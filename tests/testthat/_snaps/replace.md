@@ -1,3 +1,22 @@
+# ac_replace_file default output errors are informative
+
+    Code
+      ac_replace_file(ac, paths, "x")
+    Condition
+      Error in `ac_replace_file()`:
+      x `output` must not be the same file as `path`.
+      '<dir>/a_replaced.txt'
+      i Default output paths add "_replaced" to each file name.
+      i Supply `output` to choose other paths.
+    Code
+      ac_replace_file(ac, paths[c(1, 1)], "x")
+    Condition
+      Error in `ac_replace_file()`:
+      x `output` paths must be unique.
+      '<dir>/a_replaced.txt' and '<dir>/a_replaced.txt'
+      i Default output paths add "_replaced" to each file name.
+      i Supply `output` to choose other paths.
+
 # ac_replace_file errors on invalid output paths
 
     Code

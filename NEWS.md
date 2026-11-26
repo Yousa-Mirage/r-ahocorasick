@@ -7,6 +7,9 @@
 - `ac_extract_file(stream = FALSE)` now searches files that are not UTF-8,
   like the other `ac_*_file()` functions. `ac_locate_file()` still needs UTF-8
   files to compute character positions, and its error now says so.
+- `ac_replace_file()` now checks its default output paths the same way as
+  explicit ones. Before, with inputs such as `c("a.txt", "a_replaced.txt")`,
+  the output of the first file silently overwrote the second input.
 
 # ahocorasick 0.2.0
 

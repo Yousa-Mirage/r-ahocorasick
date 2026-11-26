@@ -162,6 +162,59 @@ test_that("ac_replace_file errors when output is the input file", {
   )
 })
 
+test_that("ac_replace_file default output does not overwrite another input", {
+  ac <- ac_build("hello")
+  dir <- tempfile()
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  paths <- file.path(dir, c("a.txt", "a_replaced.txt"))
+  writeLines("hello a", paths[[1]])
+  writeLines("hello b", paths[[2]])
+
+  for (stream in c(FALSE, TRUE)) {
+    expect_error(
+      ac_replace_file(ac, paths, "x", stream = stream),
+      "`output` must not be the same file as `path`",
+      fixed = TRUE
+    )
+  }
+
+  # Nothing was written: the second input still has its original content.
+  expect_equal(readLines(paths[[2]]), "hello b")
+  expect_equal(sort(list.files(dir)), c("a.txt", "a_replaced.txt"))
+})
+
+test_that("ac_replace_file default output errors on duplicated inputs", {
+  ac <- ac_build("hello")
+  path <- tempfile(fileext = ".txt")
+  on.exit(unlink(path), add = TRUE)
+  writeLines("hello", path)
+
+  expect_error(
+    ac_replace_file(ac, c(path, path), "x"),
+    "Default output paths add"
+  )
+})
+
+test_that("ac_replace_file default output errors are informative", {
+  ac <- ac_build("hello")
+  dir <- tempfile()
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  paths <- file.path(dir, c("a.txt", "a_replaced.txt"))
+  writeLines("hello a", paths[[1]])
+  writeLines("hello b", paths[[2]])
+
+  # Replace the random temporary directory so the snapshot is stable.
+  real_dir <- as.character(fs::path_real(dir))
+  hide_dir <- function(x) gsub(real_dir, "<dir>", x, fixed = TRUE)
+
+  expect_snapshot(error = TRUE, transform = hide_dir, {
+    ac_replace_file(ac, paths, "x")
+    ac_replace_file(ac, paths[c(1, 1)], "x")
+  })
+})
+
 test_that("ac_replace_file errors on invalid output paths", {
   ac <- ac_build("hello")
   paths <- c(tempfile(), tempfile())

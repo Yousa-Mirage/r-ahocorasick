@@ -81,7 +81,8 @@ ac_replace <- function(
 #'   supplied by name.
 #' @param output A vector of output file paths. It must have the same
 #'   length as `path`. If `NULL`, output paths are created by adding
-#'   `"_replaced"` suffix. Existing output files are overwritten.
+#'   `"_replaced"` suffix. Output paths must be unique and must not be any
+#'   of the input files. Existing output files are overwritten.
 #' @param stream If `FALSE` (default), each file is read into memory before
 #'   replacement. If `TRUE`, files are searched and replaced as streams. Stream
 #'   replacement requires an automaton built with `match_kind = "standard"`.
@@ -152,28 +153,39 @@ validate_replace_with <- function(ac, replace_with) {
 }
 
 validate_replace_output_path <- function(path, output = NULL) {
-  if (is.null(output)) {
-    return(add_replaced_suffix(path))
-  }
-
-  if (!checkmate::test_character(output, any.missing = FALSE)) {
-    cli::cli_abort(
-      "{.arg output} must be a character vector with no missing values.",
-      call = rlang::caller_env()
+  # Default paths go through the same checks below: with inputs such as
+  # `c("a.txt", "a_replaced.txt")`, the output of the first file would
+  # otherwise overwrite the second input before it is read.
+  default_output <- is.null(output)
+  hint <- if (default_output) {
+    c(
+      "i" = "Default output paths add {.val _replaced} to each file name.",
+      "i" = "Supply {.arg output} to choose other paths."
     )
   }
 
-  output <- as_valid_utf8(output, call = rlang::caller_env())
+  if (default_output) {
+    output <- add_replaced_suffix(path)
+  } else {
+    if (!checkmate::test_character(output, any.missing = FALSE)) {
+      cli::cli_abort(
+        "{.arg output} must be a character vector with no missing values.",
+        call = rlang::caller_env()
+      )
+    }
 
-  if (length(output) != length(path)) {
-    cli::cli_abort(
-      "{.arg output} must have the same length as {.arg path}.",
-      call = rlang::caller_env()
-    )
-  }
+    output <- as_valid_utf8(output, call = rlang::caller_env())
 
-  for (out in output) {
-    checkmate::assert_path_for_output(out, overwrite = TRUE)
+    if (length(output) != length(path)) {
+      cli::cli_abort(
+        "{.arg output} must have the same length as {.arg path}.",
+        call = rlang::caller_env()
+      )
+    }
+
+    for (out in output) {
+      checkmate::assert_path_for_output(out, overwrite = TRUE)
+    }
   }
 
   output <- normalize_output_path(output)
@@ -184,7 +196,8 @@ validate_replace_output_path <- function(path, output = NULL) {
     cli::cli_abort(
       c(
         "x" = "{.arg output} paths must be unique.",
-        "{.path {output[which(duplicated_output)]}}"
+        "{.path {output[which(duplicated_output)]}}",
+        hint
       ),
       call = rlang::caller_env()
     )
@@ -195,7 +208,8 @@ validate_replace_output_path <- function(path, output = NULL) {
     cli::cli_abort(
       c(
         "x" = "{.arg output} must not be the same file as {.arg path}.",
-        "{.path {output[input_output_overlap]}}"
+        "{.path {output[input_output_overlap]}}",
+        hint
       ),
       call = rlang::caller_env()
     )

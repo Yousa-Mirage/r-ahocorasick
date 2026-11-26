@@ -21,7 +21,8 @@ supplied by name.}
 
 \item{output}{A vector of output file paths. It must have the same
 length as \code{path}. If \code{NULL}, output paths are created by adding
-\code{"_replaced"} suffix. Existing output files are overwritten.}
+\code{"_replaced"} suffix. Output paths must be unique and must not be any
+of the input files. Existing output files are overwritten.}
 
 \item{stream}{If \code{FALSE} (default), each file is read into memory before
 replacement. If \code{TRUE}, files are searched and replaced as streams. Stream
