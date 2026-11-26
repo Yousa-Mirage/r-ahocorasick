@@ -1,6 +1,6 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, MatchKind};
-use extendr_api::prelude::*;
 use extendr_api::Result;
+use extendr_api::prelude::*;
 
 // The Aho-Corasick automaton and its metadata.
 pub(crate) struct AcAutomaton {

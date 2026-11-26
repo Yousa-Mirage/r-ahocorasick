@@ -1,4 +1,4 @@
-# ahocorasick 0.3.0
+# ahocorasick 0.2.1
 
 - Add `...` dots in functions arguments to force optional parameters to be
   passed explicitly.

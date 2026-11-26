@@ -1,7 +1,7 @@
 use std::fs::{self, File};
 
-use extendr_api::prelude::*;
 use extendr_api::Result;
+use extendr_api::prelude::*;
 
 use crate::automaton::AcAutomaton;
 

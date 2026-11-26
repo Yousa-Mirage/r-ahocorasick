@@ -7,8 +7,8 @@ mod offsets;
 mod replace;
 
 use aho_corasick::AhoCorasick;
-use extendr_api::prelude::*;
 use extendr_api::Result;
+use extendr_api::prelude::*;
 
 // Keep raw byte offsets so locate/extract can reuse one search pass.
 pub(crate) struct RawMatch {
