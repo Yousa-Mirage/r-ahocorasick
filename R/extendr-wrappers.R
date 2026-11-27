@@ -35,6 +35,11 @@ rust_ac_extract_file <- function(ptr, path, overlapping, with_text) .Call(wrap__
 #' @noRd
 rust_ac_extract_file_stream <- function(ptr, path, with_text) .Call(wrap__rust_ac_extract_file_stream, ptr, path, with_text)
 
+#' Return the 1-based positions of the strings in `x` that are not valid UTF-8,
+#' skipping missing values.
+#' @noRd
+rust_invalid_utf8 <- function(x) .Call(wrap__rust_invalid_utf8, x)
+
 #' Return matches with R-style character offsets for UTF-8 strings.
 #' @noRd
 rust_ac_locate <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_locate, ptr, doc, doc_ids, overlapping)

@@ -36,6 +36,8 @@
 - `rust_ac_extract` now stores `&str` slices of the document directly,
   constructing the final R character vector in a single step, rather than
   allocating a new `String` for every match.
+- Check if documents are valid UTF-8 in Rust with `simdutf8` and it's much
+  faster.
 
 # ahocorasick 0.2.0
 

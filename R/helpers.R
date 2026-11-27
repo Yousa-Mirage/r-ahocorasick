@@ -108,7 +108,7 @@ as_valid_utf8 <- function(
   force(arg)
   x <- enc2utf8(x)
 
-  invalid <- which(!is.na(x) & !validUTF8(x))
+  invalid <- rust_invalid_utf8(x)
   if (length(invalid) > 0L) {
     positions <- cli::cli_vec(invalid, list("vec-trunc" = 5L))
     cli::cli_abort(

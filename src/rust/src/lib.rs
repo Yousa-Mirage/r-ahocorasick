@@ -50,6 +50,7 @@ extendr_module! {
     use count;
     use detect;
     use extract;
+    use helper;
     use locate;
     use replace;
 }

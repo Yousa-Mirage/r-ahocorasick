@@ -1,5 +1,7 @@
-//! Small helpers shared by the modules: borrowing R strings and converting
-//! match counts to R integers.
+//! Small helpers shared by the modules:
+//!   - borrowing R strings
+//!   - checking if Strings are valid UTF-8
+//!   - converting match counts to R integers.
 
 use extendr_api::Result;
 use extendr_api::prelude::*;
@@ -7,6 +9,18 @@ use extendr_api::prelude::*;
 // Borrow the elements of an R character vector as `&str` without copying them.
 pub(crate) fn r_strs(x: &Strings) -> impl Iterator<Item = &str> {
     x.iter().map(|s| &**s)
+}
+
+/// Return the 1-based positions of the strings in `x` that are not valid UTF-8,
+/// skipping missing values.
+/// @noRd
+#[extendr]
+pub fn rust_invalid_utf8(x: Strings) -> Vec<i32> {
+    x.iter()
+        .enumerate()
+        .filter(|(_, s)| !s.is_na() && simdutf8::basic::from_utf8(s.as_bytes()).is_err())
+        .map(|(i, _)| (i + 1) as i32)
+        .collect()
 }
 
 // Convert a match count to an R integer, failing instead of wrapping around
@@ -18,6 +32,11 @@ pub(crate) fn count_to_r_int(count: usize, source: &str) -> Result<i32> {
             i32::MAX
         ))
     })
+}
+
+extendr_module! {
+    mod helper;
+    fn rust_invalid_utf8;
 }
 
 #[cfg(test)]
