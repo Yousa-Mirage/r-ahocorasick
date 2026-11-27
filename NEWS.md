@@ -1,4 +1,4 @@
-# ahocorasick 0.2.1
+# ahocorasick 0.3.0
 
 ## Breaking change
 
