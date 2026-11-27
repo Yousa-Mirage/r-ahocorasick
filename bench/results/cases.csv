@@ -1,0 +1,11 @@
+"case_id","corpus_id","pattern_set_id","docs_n","mean_doc_chars","input_mib","patterns_n"
+"en_medium_common","en_medium","en_common_32",500,5000,2.38418579101562,32
+"en_medium_rare","en_medium","en_rare_256",500,5000,2.38418579101562,256
+"en_medium_dict","en_medium","en_dict_2000",500,5000,2.38418579101562,2000
+"zh_medium_common","zh_medium","zh_common_32",500,5000,7.04660129547119,32
+"zh_medium_dict","zh_medium","zh_dict_1000",500,5000,7.04660129547119,1000
+"mix_medium_common","mix_medium","mix_common_64",500,5001,4.71749687194824,64
+"en_short_common","en_short","en_common_32",20000,200,3.814697265625,32
+"zh_short_common","zh_short","zh_common_32",20000,100,5.63747978210449,32
+"en_long_common","en_long","en_common_32",3,1506176,4.3092041015625,32
+"zh_long_common","zh_long","zh_common_32",4,822671,9.27515029907227,32

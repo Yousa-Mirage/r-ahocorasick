@@ -419,10 +419,12 @@ ac_info(ac)$implementation
 
 See the [benchmark
 article](https://yousa-mirage.github.io/r-ahocorasick/articles/benchmarks.html)
-for results on English, Chinese, and mixed-text workloads. In the
-current benchmark, `ahocorasick` is **fastest** for `detect` and `count`
-across the tested cases. The `ac_extract_df()` is also the **fastest**
-for `extract` while preserving a tidy long data-frame result.
+for results on short, medium and long English, Chinese and mixed
+documents. For counting and extracting matches from R character vectors,
+`ahocorasick` was the fastest method in nearly every case, and many
+times faster than base R or stringr loops over the patterns. For only
+detecting whether documents match, a simple loop can be faster when
+common patterns match nearly every document.
 
 As with any benchmark, real-world results will differ based on your
 particular situation. If performance is important to your application,

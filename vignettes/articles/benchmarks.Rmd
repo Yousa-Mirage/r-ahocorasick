@@ -1,0 +1,340 @@
+---
+title: "Benchmarks"
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(echo = FALSE)
+
+# The results are CSV files written by `bench/02-run-benchmarks.R`.
+find_root <- function(dir = getwd()) {
+  while (!file.exists(file.path(dir, "DESCRIPTION"))) {
+    parent <- dirname(dir)
+    if (identical(parent, dir)) {
+      stop("Cannot find the package root.")
+    }
+    dir <- parent
+  }
+  dir
+}
+results_dir <- file.path(find_root(), "bench", "results")
+read_result <- function(name) {
+  utils::read.csv(
+    file.path(results_dir, paste0(name, ".csv")),
+    encoding = "UTF-8",
+    check.names = FALSE
+  )
+}
+
+cases <- read_result("cases")
+build <- read_result("build")
+correctness <- read_result("correctness")
+comparison <- read_result("comparison")
+api <- read_result("api")
+env <- read_result("environment")
+env <- stats::setNames(env$value, env$key)
+
+method_labels <- c(
+  ahocorasick = "ahocorasick",
+  polars = "polars",
+  polars_native = "polars (native)",
+  AhoCorasickTrie = "AhoCorasickTrie",
+  base = "base R",
+  stringr = "stringr"
+)
+
+# Two significant digits below 10, so that small ratios such as 0.05 stay
+# visible, and one decimal above.
+fmt_ratio <- function(x) {
+  trimws(ifelse(
+    x < 10,
+    formatC(signif(x, 2), format = "fg", digits = 2),
+    formatC(x, format = "f", digits = 1, big.mark = ",")
+  ))
+}
+
+fmt_ms <- function(x) {
+  ifelse(
+    is.na(x),
+    "–",
+    trimws(formatC(signif(x, 3), format = "fg", digits = 3, big.mark = ","))
+  )
+}
+
+# One row per case, one column per method: the median time and how many times
+# slower than ahocorasick it is.
+task_table <- function(task) {
+  x <- comparison[comparison$task == task, ]
+  ac <- x[x$method == "ahocorasick", c("case_id", "median_ms")]
+  x$ratio <- x$median_ms / ac$median_ms[match(x$case_id, ac$case_id)]
+  x$cell <- ifelse(
+    x$method == "ahocorasick",
+    fmt_ms(x$median_ms),
+    paste0(fmt_ms(x$median_ms), " (", fmt_ratio(x$ratio), "×)")
+  )
+  out <- data.frame(Case = paste0("`", cases$case_id, "`"))
+  for (method in names(method_labels)) {
+    cells <- x$cell[x$method == method][match(cases$case_id, x$case_id[x$method == method])]
+    out[[method_labels[[method]]]] <- ifelse(is.na(cells), "–", cells)
+  }
+  knitr::kable(out, align = c("l", rep("r", length(method_labels))))
+}
+
+# The range of "times slower than ahocorasick" for one method and task, over
+# all cases it supports.
+ratios <- function(task, method) {
+  x <- comparison[comparison$task == task, ]
+  ac <- x$median_ms[x$method == "ahocorasick"][
+    match(x$case_id[x$method == method], x$case_id[x$method == "ahocorasick"])
+  ]
+  x$median_ms[x$method == method] / ac
+}
+ratio_range <- function(task, method) {
+  r <- range(ratios(task, method))
+  paste0(fmt_ratio(r[[1]]), "–", fmt_ratio(r[[2]]), "×")
+}
+api_ms <- function(case_id, call) {
+  fmt_ms(api$median_ms[api$case_id == case_id & api$call == call])
+}
+```
+
+This article compares `ahocorasick` with other ways to search many fixed
+strings in R, and then times each `ahocorasick` function. All numbers come from
+one run on `r env[["date"]]`, on `r env[["cpu"]]` with `r env[["r_version"]]`.
+They show relative costs on that machine; absolute times will differ on yours.
+
+## What is compared
+
+Every method answers three questions about each document:
+
+- **detect**: does the document contain any of the patterns? Returns a logical
+  vector.
+- **count**: how many matches does it contain, counting overlapping matches?
+  Returns an integer vector.
+- **extract**: which matches does it contain, again with overlapping matches?
+  Returns a data frame with one row per match and the document id.
+
+Each method has to return these as R objects, so every timing includes turning
+the result into something R code can use. The methods are:
+
+| Method | How it searches |
+| --- | --- |
+| ahocorasick | `ac_detect()`, `ac_count(overlapping = TRUE)` and `ac_extract_df(overlapping = TRUE)`, with an automaton built before timing. `ac_extract_df()` also returns a `patterns` column, which the other methods do not. |
+| polars | `str$contains_any()`, `str$find_many()` and `str$extract_many()`, which also use the Rust aho-corasick crate. The timing includes creating a polars DataFrame from the R character vector and converting the result back to R. |
+| polars (native) | The same expressions, on a DataFrame created before timing, and the results stay in polars. This is the cost inside a polars workflow. |
+| AhoCorasickTrie | `AhoCorasickSearch()`. It builds its trie on every call, which is part of its timings, and it only supports ASCII, so it is skipped for Chinese and mixed text. |
+| base R | A loop over the patterns, each searched in all documents at once with `grepl()` or `gregexpr()` and `fixed = TRUE`. `detect` stops searching a document once it matched. |
+| stringr | The same loop with `str_detect()`, `str_count()` and `str_extract_all()` and `fixed()` patterns. |
+
+polars can use several threads; the other methods use one.
+
+## Inputs
+
+The documents are cut from three English novels (*Crime and Punishment*,
+*Pride and Prejudice* and *The Count of Monte Cristo*) and four Chinese books
+(`三体1-3`, `射雕英雄传`, `红楼梦` and `鲁迅全集`). English text is lowercased and
+transliterated to ASCII. There are three document shapes:
+
+- **medium**: 500 documents of 5,000 characters, taken evenly from all books.
+  The mixed corpus joins half an English and half a Chinese document.
+- **short**: 20,000 documents of 200 English or 100 Chinese characters.
+- **long**: one document per book.
+
+The patterns are the most frequent English words (`common` and `dict`), English
+words of 7 or more letters that appear only a few times (`rare`), or the most
+frequent runs of 2 to 4 Chinese characters.
+
+```{r}
+#| label: cases
+
+knitr::kable(
+  data.frame(
+    Case = paste0("`", cases$case_id, "`"),
+    Documents = format(cases$docs_n, big.mark = ","),
+    `Mean characters` = format(round(cases$mean_doc_chars), big.mark = ","),
+    MiB = formatC(cases$input_mib, format = "f", digits = 2),
+    Patterns = format(cases$patterns_n, big.mark = ","),
+    check.names = FALSE
+  ),
+  align = "lrrrr"
+)
+```
+
+Patterns that can overlap themselves, such as "that", are left out. The base R
+and stringr loops search one pattern at a time and never report such overlaps,
+so their counts would differ from the Aho-Corasick methods.
+
+## Correctness
+
+Before timing, each method's result for every document is compared with the
+base R result.
+`r sum(correctness$status == "same")` results were identical to base R,
+`r sum(correctness$status == "different")` differed, and
+`r sum(correctness$status == "unsupported")` were skipped because the method
+does not support the text.
+
+## Results
+
+Each table shows the median time in milliseconds, and in parentheses how many
+times longer than `ahocorasick` it took. Each expression ran for at least
+`r env[["min_time_seconds"]]` second and `r env[["min_iterations"]]`
+iterations, including iterations that ran the garbage collector. The
+quartiles of every timing are in `bench/results/comparison.csv`.
+
+### Detect
+
+```{r}
+#| label: detect
+
+task_table("detect")
+```
+
+`detect` is the one task where `ahocorasick` is often not the fastest. Its
+search stops at the first match and takes microseconds, so `ac_detect()`
+spends almost all of its time checking that the documents are valid UTF-8,
+which needs a full pass over the text in R. polars (native) skips that check
+and was `r ratio_range("detect", "polars_native")` the time of `ac_detect()`.
+
+On medium and long documents with the `common` and `dict` patterns, the base R
+and stringr loops were even faster: the first pattern (`"the"` or `"一个"`)
+appears early in nearly every document, so the loop finishes after one or two
+patterns. They lose this advantage when many documents do not match the first
+patterns, as with the short Chinese documents, and above all when few
+documents match at all, as with the `rare` patterns, where they took
+`r fmt_ms(comparison$median_ms[comparison$case_id == "en_medium_rare" & comparison$task == "detect" & comparison$method == "base"])`
+ms against
+`r fmt_ms(comparison$median_ms[comparison$case_id == "en_medium_rare" & comparison$task == "detect" & comparison$method == "ahocorasick"])`
+ms for `ahocorasick`. AhoCorasickTrie builds its trie and finds every match
+even to detect, so it was slow throughout.
+
+### Count
+
+```{r}
+#| label: count
+
+task_table("count")
+```
+
+`ahocorasick` and polars (native) were close in every case, with polars
+(native) at `r ratio_range("count", "polars_native")` the time of
+`ahocorasick`. Converting between R and polars made polars
+`r ratio_range("count", "polars")` as slow. AhoCorasickTrie took
+`r ratio_range("count", "AhoCorasickTrie")` as long, mostly because it rebuilds
+its trie on every call. The base R and stringr loops scan every document once
+per pattern, so they slow down with more patterns and with long documents:
+`r ratio_range("count", "base")` and `r ratio_range("count", "stringr")` as
+long as `ahocorasick`.
+
+### Extract
+
+```{r}
+#| label: extract
+
+task_table("extract")
+```
+
+Inside polars, extracting took about as long as with `ahocorasick`
+(`r ratio_range("extract", "polars_native")`). From R, polars was
+`r ratio_range("extract", "polars")` as slow, because turning its list column
+of matches into an R data frame costs more than the search. The base R and
+stringr loops took `r ratio_range("extract", "base")` and
+`r ratio_range("extract", "stringr")` as long.
+
+### Building the automaton
+
+`ahocorasick` builds an automaton once and reuses it for every search.
+
+```{r}
+#| label: build
+
+knitr::kable(
+  data.frame(
+    `Pattern set` = paste0("`", unique(build$pattern_set_id), "`"),
+    Patterns = format(build$patterns_n[!duplicated(build$pattern_set_id)], big.mark = ","),
+    `Median ms` = fmt_ms(build$median_ms[!duplicated(build$pattern_set_id)]),
+    check.names = FALSE
+  ),
+  align = "lrr"
+)
+```
+
+## `ahocorasick` functions
+
+The median time in milliseconds of each search function, with the `common`
+patterns. File functions search the same documents written to one file each,
+and are not timed for short documents, which would need 20,000 files.
+
+```{r}
+#| label: api
+
+api_cases <- unique(api$case_id)
+api_table <- data.frame(Call = paste0("`", unique(api$call), "`"))
+for (case_id in api_cases) {
+  x <- api[api$case_id == case_id, ]
+  api_table[[paste0("`", case_id, "`")]] <- fmt_ms(
+    x$median_ms[match(unique(api$call), x$call)]
+  )
+}
+knitr::kable(api_table, align = c("l", rep("r", length(api_cases))))
+```
+
+Functions that return one value per document (`ac_detect()`, `ac_count()`,
+`ac_replace()`) cost little more than the search. Functions that return every
+match cost more as matches grow, because each match becomes a row in R:
+`ac_locate_df()` and `ac_extract_df()` return one data frame for all documents
+and are faster than `ac_locate()` and `ac_extract()`, which return one data
+frame per document. For example, with the short Chinese documents,
+`ac_extract_df()` took `r api_ms("zh_short_common", "ac_extract_df()")` ms and
+`ac_extract()` took `r api_ms("zh_short_common", "ac_extract()")` ms.
+
+The file functions on `en_medium_common` open 500 files, and
+`ac_replace_file()` also writes 500 files, which costs more than searching
+5,000 characters in each.
+
+## Summary
+
+- For counting and extracting matches from R character vectors, `ahocorasick`
+  was the fastest method in every case but one, where polars counted within
+  1% of it. polars working on its own data was faster on Chinese text and
+  about as fast on English text.
+- For detecting, a simple loop is enough when common patterns match nearly
+  every document, and polars is faster when the data is already in polars.
+  `ac_detect()` is limited by checking UTF-8, not by searching.
+- If your data already lives in a polars DataFrame, polars' `str$find_many()`
+  and `str$extract_many()` are as fast as `ahocorasick` and avoid converting
+  data.
+- The base R and stringr loops get slower with every added pattern, so they
+  are only reasonable for a handful of patterns.
+
+## Reproducing
+
+The novels are in `bench/data/`. The first script cuts them into documents and
+chooses the patterns; the second runs the comparison and writes the CSV files
+in `bench/results/` that this article reads. Run them from the package root:
+
+```{bash}
+#| label: run-benchmarks
+#| echo: true
+#| eval: false
+
+Rscript bench/01-generate-benchmark-data.R
+Rscript bench/02-run-benchmarks.R
+```
+
+The second script needs the bench, polars, AhoCorasickTrie and stringr
+packages, and took about 8 minutes on the machine above. Set `BENCH_MIN_TIME`,
+`BENCH_MIN_ITERATIONS` or `BENCH_CASES` to make it faster.
+
+```{r}
+#| label: versions
+
+pkgs <- grep("^package_", names(env), value = TRUE)
+knitr::kable(
+  data.frame(
+    Package = sub("^package_", "", pkgs),
+    Version = unname(env[pkgs])
+  )
+)
+```

@@ -1,9 +1,8 @@
 Aho
+AhoCorasickTrie
 Corasick
 Cristo
 DataFrame
-DeepWiki
-MiB
 NFA
 Polars
 Polars’
@@ -14,6 +13,9 @@ bioinformatics
 corasick
 dev
 doi
+lowercased
 noncontiguous
+polars
 pre
-ℹ️
+stringr
+trie
