@@ -21,3 +21,4 @@
 ^README\.Rmd$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
+^tests/testthat/fixtures$
