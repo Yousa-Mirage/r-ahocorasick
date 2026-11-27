@@ -29,10 +29,16 @@ rust_ac_extract_file <- function(ptr, path, overlapping, with_text) .Call(wrap__
 
 rust_ac_extract_file_stream <- function(ptr, path, with_text) .Call(wrap__rust_ac_extract_file_stream, ptr, path, with_text)
 
+#' Return matches with R-style character offsets for UTF-8 strings.
+#' @noRd
 rust_ac_locate <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_locate, ptr, doc, doc_ids, overlapping)
 
+#' Return matches with Rust byte offsets for UTF-8 strings.
+#' @noRd
 rust_ac_locate_bytes <- function(ptr, doc, doc_ids, overlapping) .Call(wrap__rust_ac_locate_bytes, ptr, doc, doc_ids, overlapping)
 
+#' Return matches with R-style character offsets for UTF-8 files.
+#' @noRd
 rust_ac_locate_file <- function(ptr, path, overlapping) .Call(wrap__rust_ac_locate_file, ptr, path, overlapping)
 
 rust_ac_replace <- function(ptr, doc, replace_with) .Call(wrap__rust_ac_replace, ptr, doc, replace_with)

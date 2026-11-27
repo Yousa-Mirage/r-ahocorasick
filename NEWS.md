@@ -29,6 +29,9 @@
   build their per-document results about twice as fast.
 - `ac_extract()`, `ac_extract_df()` and `ac_extract_file()` no longer create a
   new string for every match when the automaton is case-sensitive.
+- `ac_locate()`, `ac_locate_df()` and `ac_locate_file()` compute character
+  positions much faster. `ac_locate_df()` is more than twice as fast on long
+  texts with many matches.
 
 # ahocorasick 0.2.0
 
