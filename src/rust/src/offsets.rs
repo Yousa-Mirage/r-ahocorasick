@@ -1,3 +1,5 @@
+//! Convert UTF-8 byte offsets of matches into R's 1-based character positions.
+
 // Represent an R-style character span with 1-based inclusive bounds.
 pub(crate) struct RCharRange {
     pub(crate) start: i32,

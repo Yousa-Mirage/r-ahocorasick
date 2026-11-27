@@ -1,3 +1,6 @@
+//! Extract matched text and pattern ids from documents and files, with
+//! whole-file and streaming search.
+
 use std::fs::{self, File};
 use std::io;
 

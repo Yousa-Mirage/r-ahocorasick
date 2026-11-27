@@ -1,3 +1,6 @@
+//! Replace matches in documents and files, writing file results to output
+//! paths, with whole-file and streaming search.
+
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
 

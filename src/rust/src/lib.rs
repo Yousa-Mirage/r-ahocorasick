@@ -1,3 +1,7 @@
+//! Entry point of the Rust library behind the R package: declares the modules,
+//! registers the R-callable functions with extendr, and collects raw matches
+//! for the search functions to share.
+
 mod automaton;
 mod count;
 mod detect;

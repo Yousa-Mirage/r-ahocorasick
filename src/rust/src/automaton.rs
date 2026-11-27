@@ -1,3 +1,6 @@
+//! Build Aho-Corasick automatons from R patterns and options, and report their
+//! metadata and pointer validity to R.
+
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, MatchKind};
 use extendr_api::Result;
 use extendr_api::prelude::*;

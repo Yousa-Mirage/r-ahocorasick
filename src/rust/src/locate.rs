@@ -1,3 +1,6 @@
+//! Locate matches in documents and files, as R character positions or as byte
+//! offsets.
+
 use std::fs;
 
 use extendr_api::Result;

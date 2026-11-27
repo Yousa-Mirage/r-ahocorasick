@@ -1,3 +1,6 @@
+//! Detect whether documents and files contain at least one match, with
+//! whole-file and streaming search.
+
 use std::fs::{self, File};
 
 use extendr_api::Result;

@@ -1,3 +1,6 @@
+//! Count matches in documents and in files, with whole-file and streaming
+//! search.
+
 use std::fs::{self, File};
 
 use extendr_api::Result;

@@ -1,3 +1,6 @@
+//! Small helpers shared by the modules: borrowing R strings and converting
+//! match counts to R integers.
+
 use extendr_api::Result;
 use extendr_api::prelude::*;
 
