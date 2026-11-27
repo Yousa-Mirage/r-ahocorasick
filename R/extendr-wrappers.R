@@ -23,10 +23,16 @@ rust_ac_detect_file <- function(ptr, path) .Call(wrap__rust_ac_detect_file, ptr,
 
 rust_ac_detect_file_stream <- function(ptr, path) .Call(wrap__rust_ac_detect_file_stream, ptr, path)
 
+#' Return matched text and pattern ids for each haystack.
+#' @noRd
 rust_ac_extract <- function(ptr, doc, doc_ids, overlapping, with_text) .Call(wrap__rust_ac_extract, ptr, doc, doc_ids, overlapping, with_text)
 
+#' Return matched text in each file.
+#' @noRd
 rust_ac_extract_file <- function(ptr, path, overlapping, with_text) .Call(wrap__rust_ac_extract_file, ptr, path, overlapping, with_text)
 
+#' Return matched text in each file (stream).
+#' @noRd
 rust_ac_extract_file_stream <- function(ptr, path, with_text) .Call(wrap__rust_ac_extract_file_stream, ptr, path, with_text)
 
 #' Return matches with R-style character offsets for UTF-8 strings.

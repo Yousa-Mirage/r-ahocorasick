@@ -11,53 +11,36 @@ mod locate;
 mod offsets;
 mod replace;
 
-use aho_corasick::AhoCorasick;
+use aho_corasick::{AhoCorasick, Match};
 use extendr_api::Result;
 use extendr_api::prelude::*;
 
 pub(crate) use crate::helper::*;
 
-// Keep raw byte offsets so locate/extract can reuse one search pass.
-pub(crate) struct RawMatch {
-    pub(crate) pattern_id: i32,
-    pub(crate) start_byte: usize,
-    pub(crate) end_byte: usize,
-}
-
-pub(crate) fn collect_raw_matches(
+/// Call `f` on each match in `haystack` as it is found.
+pub(crate) fn for_each_match(
     automaton: &AhoCorasick,
     haystack: &[u8],
     overlapping: bool,
-) -> Result<Vec<RawMatch>> {
-    let mut raw_matches = Vec::new();
-
+    mut f: impl FnMut(Match) -> Result<()>,
+) -> Result<()> {
     if overlapping {
         let matches = automaton
             .try_find_overlapping_iter(haystack)
             .map_err(|err| Error::Other(err.to_string()))?;
-
         for mat in matches {
-            raw_matches.push(RawMatch {
-                pattern_id: (mat.pattern().as_usize() + 1) as i32,
-                start_byte: mat.start(),
-                end_byte: mat.end(),
-            });
+            f(mat)?;
         }
     } else {
         let matches = automaton
             .try_find_iter(haystack)
             .map_err(|err| Error::Other(err.to_string()))?;
-
         for mat in matches {
-            raw_matches.push(RawMatch {
-                pattern_id: (mat.pattern().as_usize() + 1) as i32,
-                start_byte: mat.start(),
-                end_byte: mat.end(),
-            });
+            f(mat)?;
         }
     }
 
-    Ok(raw_matches)
+    Ok(())
 }
 
 extendr_module! {

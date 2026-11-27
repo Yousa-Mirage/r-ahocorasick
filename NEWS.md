@@ -32,6 +32,8 @@
 - `ac_locate()`, `ac_locate_df()` and `ac_locate_file()` compute character
   positions much faster. `ac_locate_df()` is more than twice as fast on long
   texts with many matches.
+- Functions that return matches no longer collect all matches of a document
+  before processing them, which saves time and memory on long texts.
 
 # ahocorasick 0.2.0
 

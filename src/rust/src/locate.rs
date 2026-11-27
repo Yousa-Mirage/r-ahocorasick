@@ -8,7 +8,7 @@ use extendr_api::prelude::*;
 
 use crate::automaton::AcAutomaton;
 use crate::offsets::CharCursor;
-use crate::{collect_raw_matches, r_strs};
+use crate::{for_each_match, r_strs};
 
 /// Return matches with R-style character offsets for UTF-8 strings.
 /// @noRd
@@ -27,18 +27,17 @@ pub fn rust_ac_locate(
     let mut out_end = Vec::new();
 
     for (haystack, doc_id) in r_strs(&doc).zip(doc_ids.iter()) {
-        let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
         let mut cursor = CharCursor::new(haystack);
-
-        for raw_match in raw_matches {
+        for_each_match(&automaton.ac, haystack.as_bytes(), overlapping, |mat| {
             let range = cursor
-                .r_char_range(raw_match.start_byte, raw_match.end_byte)
+                .r_char_range(mat.start(), mat.end())
                 .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
             out_doc_id.push(*doc_id);
-            out_pattern_id.push(raw_match.pattern_id);
+            out_pattern_id.push(mat.pattern().as_i32() + 1);
             out_start.push(range.start);
             out_end.push(range.end);
-        }
+            Ok(())
+        })?;
     }
 
     let list = list!(
@@ -68,14 +67,13 @@ pub fn rust_ac_locate_bytes(
     let mut out_byte_end = Vec::new();
 
     for (haystack, doc_id) in r_strs(&doc).zip(doc_ids.iter()) {
-        let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
-
-        for raw_match in raw_matches {
+        for_each_match(&automaton.ac, haystack.as_bytes(), overlapping, |mat| {
             out_doc_id.push(*doc_id);
-            out_pattern_id.push(raw_match.pattern_id);
-            out_byte_start.push(raw_match.start_byte);
-            out_byte_end.push(raw_match.end_byte);
-        }
+            out_pattern_id.push(mat.pattern().as_i32() + 1);
+            out_byte_start.push(mat.start());
+            out_byte_end.push(mat.end());
+            Ok(())
+        })?;
     }
 
     let list = list!(
@@ -116,19 +114,17 @@ pub fn rust_ac_locate_file(
             ))
         })?;
 
-        let raw_matches = collect_raw_matches(&automaton.ac, haystack.as_bytes(), overlapping)?;
-
         let mut cursor = CharCursor::new(&haystack);
-
-        for raw_match in raw_matches {
+        for_each_match(&automaton.ac, haystack.as_bytes(), overlapping, |mat| {
             let range = cursor
-                .r_char_range(raw_match.start_byte, raw_match.end_byte)
+                .r_char_range(mat.start(), mat.end())
                 .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
             out_file_id.push(file_id);
-            out_pattern_id.push(raw_match.pattern_id);
+            out_pattern_id.push(mat.pattern().as_i32() + 1);
             out_start.push(range.start);
             out_end.push(range.end);
-        }
+            Ok(())
+        })?;
     }
 
     let list = list!(
