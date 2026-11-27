@@ -24,10 +24,10 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/ahocorasick)](https://CRAN.R-project.org/package=ahocorasick)
 [![R-universe Version](https://yousa-mirage.r-universe.dev/ahocorasick/badges/version)](https://yousa-mirage.r-universe.dev/ahocorasick)
-[![GitHub Stars](https://img.shields.io/github/stars/Yousa-Mirage/r-ahocorasick?style=social)](https://github.com/Yousa-Mirage/r-ahocorasick/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/Yousa-Mirage/r-ahocorasick?style=social)](https://github.com/Yousa-Mirage/r-ahocorasick)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docs dev Version](https://img.shields.io/badge/docs-dev-blue.svg)](https://yousa-mirage.github.io/r-ahocorasick/)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yousa-Mirage/r-ahocorasick)
+
 <!-- badges: end -->
 
 </div>

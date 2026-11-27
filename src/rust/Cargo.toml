@@ -1,31 +1,32 @@
 [package]
-name = 'ahocorasick'
+name = "ahocorasick"
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.85"
 publish = false
-version = '0.3.0'
-edition = '2024'
-rust-version = '1.85'
 
 [lib]
-crate-type = [ 'rlib', 'staticlib' ]
-name = 'ahocorasick'
+crate-type = ["rlib", "staticlib"]
+name = "ahocorasick"
 
 [[bin]]
-name = 'document'
-path = 'document.rs'
+name = "document"
+path = "document.rs"
 
 [dependencies]
 aho-corasick = "1"
-extendr-api = '0.9.0'
+extendr-api = "0.9.0"
+
+[lints.clippy]
+expect_used = "deny"
+unwrap_used = "deny"
 
 [lints.rust]
 warnings = "deny"
 
-[lints.clippy]
-unwrap_used = "deny"
-expect_used = "deny"
-
 [profile.release]
-lto = true
-codegen-units = 1
 opt-level = 3
+strip = true
+lto = true
 panic = "unwind"
+codegen-units = 1
