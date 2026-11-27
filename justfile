@@ -33,9 +33,7 @@ test:
     @echo "🎉 All tests passed!"
 
 site:
-    Rscript -e "devtools::build_readme()"
-    Rscript -e "rmarkdown::render('.github/CONTRIBUTING.Rmd')"
-    Rscript -e "pkgdown::build_site()"
+    @Rscript tools/build-site.R
     @echo "✅ Site built successfully!"
     @open docs/index.html || true
 

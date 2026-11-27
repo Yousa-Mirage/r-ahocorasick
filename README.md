@@ -3,7 +3,7 @@
 
 # ahocorasick
 
-<div data-align="center">
+<div align="center">
 
 <!-- badges: start -->
 
@@ -456,4 +456,4 @@ Inspired by the Python package
 for the excellent Rust [`aho-corasick`](https://docs.rs/aho-corasick/)
 crate.
 
-MIT © 2026 Yousa Mirage
+[MIT © 2026 Yousa Mirage](LICENSE.md)

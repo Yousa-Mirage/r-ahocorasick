@@ -434,4 +434,4 @@ Inspired by the Python package
 [`ahocorasick_rs`](https://github.com/G-Research/ahocorasick_rs). Thanks for the
 excellent Rust [`aho-corasick`](https://docs.rs/aho-corasick/) crate.
 
-MIT © 2026 Yousa Mirage
+[MIT © 2026 Yousa Mirage](LICENSE.md)
