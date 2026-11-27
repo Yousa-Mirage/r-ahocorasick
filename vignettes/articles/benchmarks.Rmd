@@ -50,7 +50,7 @@ method_labels <- c(
 fmt_ratio <- function(x) {
   trimws(ifelse(
     x < 10,
-    formatC(signif(x, 2), format = "fg", digits = 2),
+    formatC(signif(x, 2), format = "fg", digits = 2, flag = "#"),
     formatC(x, format = "f", digits = 1, big.mark = ",")
   ))
 }
@@ -95,6 +95,12 @@ ratio_range <- function(task, method) {
   r <- range(ratios(task, method))
   paste0(fmt_ratio(r[[1]]), "–", fmt_ratio(r[[2]]), "×")
 }
+# Cases where `ac_detect()` took less than a millisecond.
+detect_ms <- comparison$median_ms[
+  comparison$task == "detect" & comparison$method == "ahocorasick"
+]
+detect_fast <- paste(sum(detect_ms < 1), "of", length(detect_ms))
+
 api_ms <- function(case_id, call) {
   fmt_ms(api$median_ms[api$case_id == case_id & api$call == call])
 }
@@ -122,13 +128,13 @@ the result into something R code can use. The methods are:
 | Method | How it searches |
 | --- | --- |
 | ahocorasick | `ac_detect()`, `ac_count(overlapping = TRUE)` and `ac_extract_df(overlapping = TRUE)`, with an automaton built before timing. `ac_extract_df()` also returns a `patterns` column, which the other methods do not. |
-| polars | `str$contains_any()`, `str$find_many()` and `str$extract_many()`, which also use the Rust aho-corasick crate. The timing includes creating a polars DataFrame from the R character vector and converting the result back to R. |
-| polars (native) | The same expressions, on a DataFrame created before timing, and the results stay in polars. This is the cost inside a polars workflow. |
+| Polars | `str$contains_any()`, `str$find_many()` and `str$extract_many()`, which also use the Rust aho-corasick crate. The timing includes creating a Polars DataFrame from the R character vector and converting the result back to R. |
+| Polars (native) | The same expressions, on a DataFrame created before timing, and the results stay in Polars. This is the cost inside a Polars workflow. |
 | AhoCorasickTrie | `AhoCorasickSearch()`. It builds its trie on every call, which is part of its timings, and it only supports ASCII, so it is skipped for Chinese and mixed text. |
 | base R | A loop over the patterns, each searched in all documents at once with `grepl()` or `gregexpr()` and `fixed = TRUE`. `detect` stops searching a document once it matched. |
 | stringr | The same loop with `str_detect()`, `str_count()` and `str_extract_all()` and `fixed()` patterns. |
 
-polars can use several threads; the other methods use one.
+Polars can use several threads; the other methods use one.
 
 ## Inputs
 
@@ -180,8 +186,7 @@ does not support the text.
 Each table shows the median time in milliseconds, and in parentheses how many
 times longer than `ahocorasick` it took. Each expression ran for at least
 `r env[["min_time_seconds"]]` second and `r env[["min_iterations"]]`
-iterations, including iterations that ran the garbage collector. The
-quartiles of every timing are in `bench/results/comparison.csv`.
+iterations.
 
 ### Detect
 
@@ -191,18 +196,24 @@ quartiles of every timing are in `bench/results/comparison.csv`.
 task_table("detect")
 ```
 
-`detect` is the one task where `ahocorasick` is often not the fastest. Its
-search stops at the first match and takes microseconds, so `ac_detect()`
-spends almost all of its time checking that the documents are valid UTF-8,
-which needs a full pass over the text in R. polars (native) skips that check
-and was `r ratio_range("detect", "polars_native")` the time of `ac_detect()`.
+The search in `ac_detect()` stops at the first match, so a good part of its
+time is checking that every document is valid UTF-8, which reads the whole
+text. It took less than a millisecond in `r detect_fast` cases; the
+exceptions are the `rare` patterns, which few documents contain, so the whole
+text is searched, and the 20,000 short Chinese documents. Polars
+(native) does not check the text and took
+`r ratio_range("detect", "polars_native")` the time of `ac_detect()`; from R,
+converting the documents to Polars made it `r ratio_range("detect", "polars")`
+as slow.
 
-On medium and long documents with the `common` and `dict` patterns, the base R
-and stringr loops were even faster: the first pattern (`"the"` or `"一个"`)
-appears early in nearly every document, so the loop finishes after one or two
-patterns. They lose this advantage when many documents do not match the first
-patterns, as with the short Chinese documents, and above all when few
-documents match at all, as with the `rare` patterns, where they took
+`detect` is the one task where a simple loop can be fastest. On the English,
+mixed and long documents with the `common` and `dict` patterns, the first
+pattern (`"the"` or `"一个"`) appears early in nearly every document, so the
+base R and stringr loops finish after one or two patterns; on the medium
+Chinese documents they were about as fast as `ac_detect()`. They lose this advantage when many
+documents do not match the first patterns, as with the short Chinese
+documents, and above all when few documents match at all, as with the `rare`
+patterns, where they took
 `r fmt_ms(comparison$median_ms[comparison$case_id == "en_medium_rare" & comparison$task == "detect" & comparison$method == "base"])`
 ms against
 `r fmt_ms(comparison$median_ms[comparison$case_id == "en_medium_rare" & comparison$task == "detect" & comparison$method == "ahocorasick"])`
@@ -217,9 +228,9 @@ even to detect, so it was slow throughout.
 task_table("count")
 ```
 
-`ahocorasick` and polars (native) were close in every case, with polars
+`ahocorasick` and Polars (native) were close in every case, with Polars
 (native) at `r ratio_range("count", "polars_native")` the time of
-`ahocorasick`. Converting between R and polars made polars
+`ahocorasick`. Converting between R and Polars made Polars
 `r ratio_range("count", "polars")` as slow. AhoCorasickTrie took
 `r ratio_range("count", "AhoCorasickTrie")` as long, mostly because it rebuilds
 its trie on every call. The base R and stringr loops scan every document once
@@ -235,8 +246,8 @@ long as `ahocorasick`.
 task_table("extract")
 ```
 
-Inside polars, extracting took about as long as with `ahocorasick`
-(`r ratio_range("extract", "polars_native")`). From R, polars was
+Inside Polars, extracting took slightly longer than with `ahocorasick`
+(`r ratio_range("extract", "polars_native")`). From R, Polars was
 `r ratio_range("extract", "polars")` as slow, because turning its list column
 of matches into an R data frame costs more than the search. The base R and
 stringr loops took `r ratio_range("extract", "base")` and
@@ -296,15 +307,14 @@ The file functions on `en_medium_common` open 500 files, and
 ## Summary
 
 - For counting and extracting matches from R character vectors, `ahocorasick`
-  was the fastest method in every case but one, where polars counted within
-  1% of it. polars working on its own data was faster on Chinese text and
-  about as fast on English text.
-- For detecting, a simple loop is enough when common patterns match nearly
-  every document, and polars is faster when the data is already in polars.
-  `ac_detect()` is limited by checking UTF-8, not by searching.
-- If your data already lives in a polars DataFrame, polars' `str$find_many()`
-  and `str$extract_many()` are as fast as `ahocorasick` and avoid converting
-  data.
+  was the fastest method in every case. Polars working on its own data
+  counted about as fast and extracted slightly slower.
+- For detecting, `ac_detect()` took less than a millisecond in `r detect_fast`
+  cases. A loop over the patterns can be faster when common patterns match
+  nearly every document, but is much slower when they do not.
+- If your data already lives in a Polars DataFrame, Polars' `str$find_many()`
+  and `str$extract_many()` are about as fast as `ahocorasick` and avoid
+  converting data.
 - The base R and stringr loops get slower with every added pattern, so they
   are only reasonable for a handful of patterns.
 
@@ -323,9 +333,7 @@ Rscript bench/01-generate-benchmark-data.R
 Rscript bench/02-run-benchmarks.R
 ```
 
-The second script needs the bench, polars, AhoCorasickTrie and stringr
-packages, and took about 8 minutes on the machine above. Set `BENCH_MIN_TIME`,
-`BENCH_MIN_ITERATIONS` or `BENCH_CASES` to make it faster.
+The second script needs the bench, Polars, AhoCorasickTrie.
 
 ```{r}
 #| label: versions

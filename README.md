@@ -420,9 +420,11 @@ ac_info(ac)$implementation
 See the [benchmark
 article](https://yousa-mirage.github.io/r-ahocorasick/articles/benchmarks.html)
 for results on short, medium and long English, Chinese and mixed
-documents. For counting and extracting matches from R character vectors,
-`ahocorasick` was the fastest method in nearly every case, and many
-times faster than base R or stringr loops over the patterns. For only
+documents.
+
+For counting and extracting matches from R character vectors,
+`ahocorasick` was the fastest method in every case, and many times
+faster than base R or stringr loops over the patterns. For only
 detecting whether documents match, a simple loop can be faster when
 common patterns match nearly every document.
 
