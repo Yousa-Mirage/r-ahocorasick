@@ -30,7 +30,8 @@ pub fn rust_ac_extract(
 
     let mut out_doc_id = Vec::new();
     let mut out_pattern_id = Vec::new();
-    let mut out_matches = Vec::new();
+
+    let mut out_matches: Vec<&str> = Vec::new();
 
     for (haystack, doc_id) in r_strs(&doc).zip(doc_ids.iter()) {
         for_each_match(&automaton.ac, haystack.as_bytes(), overlapping, |mat| {
@@ -38,7 +39,7 @@ pub fn rust_ac_extract(
                 let matched = haystack
                     .get(mat.range())
                     .ok_or_else(|| Error::Other("match offsets are not UTF-8 boundaries".into()))?;
-                out_matches.push(matched.to_string());
+                out_matches.push(matched);
             }
             out_doc_id.push(*doc_id);
             out_pattern_id.push(mat.pattern().as_i32() + 1);
@@ -49,7 +50,7 @@ pub fn rust_ac_extract(
     let list = list!(
         doc_id = out_doc_id,
         pattern_id = out_pattern_id,
-        matches = out_matches
+        matches = Strings::from_values(out_matches)
     );
 
     Ok(list)

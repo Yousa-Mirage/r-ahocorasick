@@ -34,6 +34,8 @@
   texts with many matches.
 - Functions that return matches no longer collect all matches of a document
   before processing them, which saves time and memory on long texts.
+- `ac_extract()` and `ac_extract_df()` with `ascii_case_insensitive = TRUE`
+  are up to 1.7 times as fast on texts with many matches.
 
 # ahocorasick 0.2.0
 
