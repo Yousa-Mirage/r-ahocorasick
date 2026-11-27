@@ -30,12 +30,12 @@
 - `ac_extract()`, `ac_extract_df()` and `ac_extract_file()` no longer create a
   new string for every match when the automaton is case-sensitive.
 - `ac_locate()`, `ac_locate_df()` and `ac_locate_file()` compute character
-  positions much faster. `ac_locate_df()` is more than twice as fast on long
-  texts with many matches.
+  positions much faster.
 - Functions that return matches no longer collect all matches of a document
-  before processing them, which saves time and memory on long texts.
-- `ac_extract()` and `ac_extract_df()` with `ascii_case_insensitive = TRUE`
-  are up to 1.7 times as fast on texts with many matches.
+  before processing them.
+- `rust_ac_extract` now stores `&str` slices of the document directly,
+  constructing the final R character vector in a single step, rather than
+  allocating a new `String` for every match.
 
 # ahocorasick 0.2.0
 
