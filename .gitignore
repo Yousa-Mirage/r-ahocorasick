@@ -10,7 +10,6 @@ ref/*
 # R package build/check outputs.
 *.tar.gz
 *.Rcheck/
-CRAN-SUBMISSION
 Meta/
 doc/
 src/*.o
@@ -47,3 +46,7 @@ src/vendor/
 src/rust/vendor.tar.xz
 src/rust/vendor-config.toml
 src/rust/vendor/
+
+# CRAN files
+CRAN-SUBMISSION
+cran-comments.md

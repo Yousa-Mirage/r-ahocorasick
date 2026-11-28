@@ -46,3 +46,8 @@ pkg-check:
 
 update-wordlist:
     Rscript -e "spelling::update_wordlist(confirm = FALSE)"
+
+vendor:
+    COPYFILE_DISABLE=1 Rscript -e "rextendr::vendor_crates()"
+    @Rscript -e 'files <- utils::untar("src/rust/vendor.tar.xz", list = TRUE, tar = "internal"); bad <- grep("(^|/)[.]_", files, value = TRUE); if (length(bad)) stop(length(bad), " AppleDouble files in src/rust/vendor.tar.xz", call. = FALSE)'
+    @echo "✅ Crates vendored!"
