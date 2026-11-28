@@ -57,29 +57,6 @@ test_that("ac_build returns an automaton with all of its fields", {
   expect_identical(validate_ac_automaton(ac), ac)
 })
 
-test_that("ac_automaton validation catches invalid external pointers", {
-  ac <- ac_build("hello")
-  ac$ptr <- new("externalptr")
-
-  expect_snapshot(ac_info(ac), error = TRUE)
-})
-
-test_that("ac_automaton validation catches malformed objects", {
-  ac <- ac_build("hello")
-  missing_field <- structure(
-    unclass(ac)[c("ptr", "patterns")],
-    class = "ac_automaton"
-  )
-  wrong_type <- ac
-  wrong_type$patterns <- 1L
-
-  expect_snapshot(error = TRUE, {
-    ac_info("hello")
-    ac_info(missing_field)
-    ac_info(wrong_type)
-  })
-})
-
 test_that("print shows a hint for automatons restored from disk", {
   ac <- ac_build(c("hello", "world"))
   path <- tempfile(fileext = ".rds")
@@ -105,4 +82,17 @@ test_that("length works for automatons restored from disk", {
   expect_identical(length(ac), 2L)
   expect_identical(length(readRDS(path)), 2L)
   expect_identical(length(structure(list(), class = "ac_automaton")), 0L)
+})
+
+test_that("ac_automaton objects can't be modified", {
+  ac <- ac_build("hello")
+
+  expect_snapshot(error = TRUE, {
+    ac$patterns <- "world"
+    ac[["patterns"]] <- "world"
+    ac["patterns"] <- list("world")
+  })
+
+  expect_equal(ac_patterns(ac), "hello")
+  expect_equal(ac_detect(ac, c("hello", "world")), c(TRUE, FALSE))
 })

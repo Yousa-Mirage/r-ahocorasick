@@ -14,14 +14,16 @@
 #'     ties by longest match.
 #' @param implementation Rust automaton implementation. `"auto"` lets the
 #'   crate choose.
-#' @param ascii_case_insensitive Use ASCII-only case-insensitive matching. Default is `FALSE`.
+#' @param ascii_case_insensitive Use ASCII-only case-insensitive matching.
+#'   Default is `FALSE`.
 #' @param duplicate How duplicate patterns are handled:
 #'   * `"keep"` preserves duplicates in their original order.
 #'   * `"error"` fails if `patterns` contains duplicates.
 #'   * `"deduplicate"` keeps the first occurrence of each pattern and drops
 #'     later duplicates.
 #'
-#' @return An immutable `<ac_automaton>` object.
+#' @return An `<ac_automaton>` object. Its fields can't be modified: build a
+#'   new automaton to search for other patterns or with other options.
 #' @seealso [ac_locate()], [ac_locate_df()], [ac_detect()], [ac_count()],
 #'   [ac_extract()], [ac_extract_df()], [ac_replace()], [ac_patterns()].
 #'

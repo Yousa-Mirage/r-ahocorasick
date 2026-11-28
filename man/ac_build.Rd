@@ -31,7 +31,8 @@ ties by longest match.
 \item{implementation}{Rust automaton implementation. \code{"auto"} lets the
 crate choose.}
 
-\item{ascii_case_insensitive}{Use ASCII-only case-insensitive matching. Default is \code{FALSE}.}
+\item{ascii_case_insensitive}{Use ASCII-only case-insensitive matching.
+Default is \code{FALSE}.}
 
 \item{duplicate}{How duplicate patterns are handled:
 \itemize{
@@ -42,7 +43,8 @@ later duplicates.
 }}
 }
 \value{
-An immutable \verb{<ac_automaton>} object.
+An \verb{<ac_automaton>} object. Its fields can't be modified: build a
+new automaton to search for other patterns or with other options.
 }
 \description{
 \code{ac_build()} compiles a character vector of patterns into a reusable

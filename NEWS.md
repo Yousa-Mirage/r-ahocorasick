@@ -1,5 +1,10 @@
 # ahocorasick (development version)
 
+- `<ac_automaton>` objects now throw an error when they are modified with
+  `$<-`, `[[<-` or `[<-`. Build a new automaton with `ac_build()` instead.
+
+# ahocorasick (development version)
+
 # ahocorasick 0.3.0
 
 ## Breaking change
