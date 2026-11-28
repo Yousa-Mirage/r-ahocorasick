@@ -82,18 +82,15 @@ ac_build <- function(
   )
   info <- rust_ac_info(ptr)
 
-  structure(
-    list(
-      ptr = ptr,
-      patterns = patterns,
-      options = list(
-        match_kind = match_kind,
-        implementation = implementation,
-        ascii_case_insensitive = ascii_case_insensitive,
-        duplicate = duplicate
-      ),
-      info = info
+  new_ac_automaton(
+    ptr = ptr,
+    patterns = patterns,
+    options = list(
+      match_kind = match_kind,
+      implementation = implementation,
+      ascii_case_insensitive = ascii_case_insensitive,
+      duplicate = duplicate
     ),
-    class = "ac_automaton"
+    info = info
   )
 }

@@ -35,6 +35,26 @@
       ! `ac` contains an invalid Rust external pointer.
       i Rebuild it with `ac_build()`. External pointers cannot be restored across R sessions.
 
+# ac_automaton validation catches malformed objects
+
+    Code
+      ac_info("hello")
+    Condition
+      Error in `validate_ac_automaton()`:
+      ! `ac` must be an <ac_automaton> object.
+    Code
+      ac_info(missing_field)
+    Condition
+      Error in `validate_ac_automaton()`:
+      ! `ac` is not a valid <ac_automaton> object.
+      i It must have the fields ptr, patterns, options, and info. Create automatons with `ac_build()`.
+    Code
+      ac_info(wrong_type)
+    Condition
+      Error in `validate_ac_automaton()`:
+      ! `ac` is not a valid <ac_automaton> object.
+      i It must have the fields ptr, patterns, options, and info. Create automatons with `ac_build()`.
+
 # print shows a hint for automatons restored from disk
 
     Code

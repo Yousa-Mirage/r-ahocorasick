@@ -64,6 +64,47 @@ length.ac_automaton <- function(x) {
   length(.subset2(x, "patterns"))
 }
 
+# The <ac_automaton> class -----------------------------------------------------
+#
+# An <ac_automaton> is a list with these fields:
+#
+# - `ptr`: an external pointer to the Rust automaton.
+# - `patterns`: the patterns, in the order of their ids.
+# - `options`: the `ac_build()` options it was built with.
+# - `info`: metadata reported by Rust, see `ac_info()`.
+#
+# `new_ac_automaton()` creates one and is only called by `ac_build()`.
+# `validate_ac_automaton()` checks one before each search: that it has these
+# fields, and that its pointer still refers to a live automaton, which is not
+# the case after `readRDS()` or loading a saved workspace.
+
+new_ac_automaton <- function(ptr, patterns, options, info) {
+  stopifnot(
+    typeof(ptr) == "externalptr",
+    is.character(patterns),
+    is.list(options),
+    is.list(info)
+  )
+
+  structure(
+    list(ptr = ptr, patterns = patterns, options = options, info = info),
+    class = "ac_automaton"
+  )
+}
+
+ac_automaton_fields <- c("ptr", "patterns", "options", "info")
+
+# Return whether `ac` has the fields of an <ac_automaton>, with the right
+# types. Never errors.
+has_ac_fields <- function(ac) {
+  is.list(ac) &&
+    all(ac_automaton_fields %in% names(ac)) &&
+    typeof(.subset2(ac, "ptr")) == "externalptr" &&
+    is.character(.subset2(ac, "patterns")) &&
+    is.list(.subset2(ac, "options")) &&
+    is.list(.subset2(ac, "info"))
+}
+
 # Return whether `ac` holds a pointer to a live Rust automaton. Never errors.
 has_valid_ac_pointer <- function(ac) {
   if (!is.list(ac)) {
@@ -81,13 +122,16 @@ has_valid_ac_pointer <- function(ac) {
   )
 }
 
-# Validate that an object is a properly constructed <ac_automaton>.
+# Check that `ac` is an <ac_automaton> that can be searched with, and return it.
 validate_ac_automaton <- function(ac) {
   if (!inherits(ac, "ac_automaton")) {
     cli::cli_abort("{.arg ac} must be an <ac_automaton> object.")
   }
-  if (is.null(ac$ptr)) {
-    cli::cli_abort("{.arg ac} must contain a non-null Rust external pointer.")
+  if (!has_ac_fields(ac)) {
+    cli::cli_abort(c(
+      "{.arg ac} is not a valid <ac_automaton> object.",
+      "i" = "It must have the fields {.field {ac_automaton_fields}}. Create automatons with {.fn ac_build}."
+    ))
   }
   if (!has_valid_ac_pointer(ac)) {
     cli::cli_abort(c(

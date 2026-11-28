@@ -46,16 +46,38 @@ test_that("ac_build requires optional arguments to be named", {
   )
 })
 
+test_that("ac_build returns an automaton with all of its fields", {
+  ac <- ac_build("hello", match_kind = "leftmost_first")
+
+  expect_s3_class(ac, "ac_automaton")
+  expect_named(ac, c("ptr", "patterns", "options", "info"))
+  expect_type(ac$ptr, "externalptr")
+  expect_equal(ac$options$match_kind, "leftmost_first")
+  expect_true(has_ac_fields(ac))
+  expect_identical(validate_ac_automaton(ac), ac)
+})
+
 test_that("ac_automaton validation catches invalid external pointers", {
-  ac <- structure(
-    list(ptr = new("externalptr")),
+  ac <- ac_build("hello")
+  ac$ptr <- new("externalptr")
+
+  expect_snapshot(ac_info(ac), error = TRUE)
+})
+
+test_that("ac_automaton validation catches malformed objects", {
+  ac <- ac_build("hello")
+  missing_field <- structure(
+    unclass(ac)[c("ptr", "patterns")],
     class = "ac_automaton"
   )
+  wrong_type <- ac
+  wrong_type$patterns <- 1L
 
-  expect_snapshot(
-    error = TRUE,
-    ac_info(ac)
-  )
+  expect_snapshot(error = TRUE, {
+    ac_info("hello")
+    ac_info(missing_field)
+    ac_info(wrong_type)
+  })
 })
 
 test_that("print shows a hint for automatons restored from disk", {
