@@ -15,7 +15,6 @@ dev
 doi
 lowercased
 noncontiguous
-polars
 pre
 stringr
 trie
